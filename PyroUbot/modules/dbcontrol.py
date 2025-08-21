@@ -573,7 +573,7 @@ async def _(client, message):
     admin_id = await get_list_from_vars(bot.me.id, "ADMIN_USERS")
 
     # ✅ Cek kalau bukan reseller, admin, atau owner → ditolak
-    if user.id not in reseller_id and user.id not in admin_id and user.id != OWNER_ID:
+    if str(user.id) not in reseller_id and str(user.id) not in admin_id and str(user.id) != str(OWNER_ID):
         return await message.reply("⛔ Kamu tidak punya akses ke perintah ini.")
 
     reply = message.reply_to_message
@@ -600,15 +600,15 @@ async def _(client, message):
     else:
         total_days = 30
 
-# ✅ Batasi sesuai role
-if str(user.id) in reseller_id and total_days > 30:
-    return await message.reply("**⛔ Reseller hanya bisa memberikan maksimal 1 bulan (30 hari).**")
+    # ✅ Batasi sesuai role (HARUS di dalam function)
+    if str(user.id) in reseller_id and total_days > 30:
+        return await message.reply("**⛔ Reseller hanya bisa memberikan maksimal 1 bulan (30 hari).**")
 
-if str(user.id) in admin_id and total_days > 180:
-    return await message.reply("**⛔ Admin hanya bisa memberikan maksimal 6 bulan (180 hari).**")
+    if str(user.id) in admin_id and total_days > 180:
+        return await message.reply("**⛔ Admin hanya bisa memberikan maksimal 6 bulan (180 hari).**")
 
-if str(user.id) == str(OWNER_ID) and total_days > 3650:
-    return await message.reply("**⛔ Maksimal premium adalah 10 tahun (3650 hari).**")
+    if str(user.id) == str(OWNER_ID) and total_days > 3650:
+        return await message.reply("**⛔ Maksimal premium adalah 10 tahun (3650 hari).**")
 
     msg = await message.reply("⏳ Memproses...")
 
