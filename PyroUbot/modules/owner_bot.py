@@ -11,56 +11,63 @@ from PyroUbot import *
 @PY.UBOT("prem")
 async def _(client, message):
     user = message.from_user
+
     seller_id = await get_list_from_vars(bot.me.id, "SELER_USERS")
-    if user.id not in seller_id:
-        return
+    admin_id = await get_list_from_vars(bot.me.id, "ADMIN_USERS")
+
+    # validasi: hanya OWNER, ADMIN, atau SELLER yang bisa pakai .prem
+    if user.id != OWNER_ID and user.id not in seller_id and user.id not in admin_id:
+        return await message.reply("❌ Kamu tidak punya akses untuk menggunakan perintah ini.")
+
     user_id, get_bulan = await extract_user_and_reason(message)
     msg = await message.reply("memproses...")
     if not user_id:
         return await msg.edit(f"<b>{message.text} ᴜsᴇʀ_ɪᴅ/ᴜsᴇʀɴᴀᴍᴇ - ʙᴜʟᴀɴ</b>")
 
     try:
-        user = await client.get_users(user_id)
+        target = await client.get_users(user_id)
     except Exception as error:
         return await msg.edit(error)
+
     if not get_bulan:
         get_bulan = 1
 
     prem_users = await get_list_from_vars(bot.me.id, "PREM_USERS")
 
-    if user.id in prem_users:
+    if target.id in prem_users:
         return await msg.edit(f"""
-<blockquote><b>ɴᴀᴍᴇ: [{user.first_name} {user.last_name or ''}](tg://user?id={user.id})</b>
-<b>ɪᴅ: `{user.id}`</b>
-<b>ᴋᴇᴛᴇʀᴀɴɢᴀɴ: ꜱᴜᴅᴀʜ ᴘʀᴇᴍɪᴜᴍ</ci></b>
+<blockquote><b>ɴᴀᴍᴇ: [{target.first_name} {target.last_name or ''}](tg://user?id={target.id})</b>
+<b>ɪᴅ: `{target.id}`</b>
+<b>ᴋᴇᴛᴇʀᴀɴɢᴀɴ: ꜱᴜᴅᴀʜ ᴘʀᴇᴍɪᴜᴍ</b>
 <b>ᴇxᴘɪʀᴇᴅ: {get_bulan} ʙᴜʟᴀɴ</b></blockquote>
-"""
-        )
+""")
 
     try:
         now = datetime.now(timezone("Asia/Jakarta"))
         expired = now + relativedelta(months=int(get_bulan))
         await set_expired_date(user_id, expired)
-        await add_to_vars(bot.me.id, "PREM_USERS", user.id)
+        await add_to_vars(bot.me.id, "PREM_USERS", target.id)
+
         await msg.edit(f"""
-<blockquote><b>ɴᴀᴍᴇ: [{user.first_name} {user.last_name or ''}](tg://user?id={user.id})</b>
-<b>ɪᴅ: `{user.id}`</b>
+<blockquote><b>ɴᴀᴍᴇ: [{target.first_name} {target.last_name or ''}](tg://user?id={target.id})</b>
+<b>ɪᴅ: `{target.id}`</b>
 <b>ᴇxᴘɪʀᴇᴅ: {get_bulan} ʙᴜʟᴀɴ</b>
 <b>ꜱɪʟᴀʜᴋᴀɴ ʙᴜᴋᴀ @{bot.me.username} ᴜɴᴛᴜᴋ ᴍᴇᴍʙᴜᴀᴛ ᴜꜱᴇʀʙᴏᴛ</b></blockquote>
-"""
-        )
+""")
+
         return await bot.send_message(
             OWNER_ID,
-            f"• ɪᴅ-ꜱᴇʟʟᴇʀ: `{message.from_user.id}`\n\n• ɪᴅ-ᴄᴜꜱᴛᴏᴍᴇʀ: `{user_id}`",
+            f"• ɪᴅ-ꜱᴇʟʟᴇʀ/ᴀᴅᴍɪɴ: `{message.from_user.id}`\n\n• ɪᴅ-ᴄᴜꜱᴛᴏᴍᴇʀ: `{user_id}`",
             reply_markup=InlineKeyboardMarkup(
                 [
                     [
                         InlineKeyboardButton(
-                            "⁉️ ꜱᴇʟʟᴇʀ",
+                            "⁉️ ꜱᴇʟʟᴇʀ/ᴀᴅᴍɪɴ",
                             callback_data=f"profil {message.from_user.id}",
                         ),
                         InlineKeyboardButton(
-                            "ᴄᴜꜱᴛᴏᴍᴇʀ ⁉️", callback_data=f"profil {user_id}"
+                            "ᴄᴜꜱᴛᴏᴍᴇʀ ⁉️",
+                            callback_data=f"profil {user_id}",
                         ),
                     ],
                 ]
@@ -72,12 +79,19 @@ async def _(client, message):
 
 @PY.UBOT("unprem")
 async def _(client, message):
+    user = message.from_user
+
+    seller_id = await get_list_from_vars(bot.me.id, "SELER_USERS")
+    admin_id = await get_list_from_vars(bot.me.id, "ADMIN_USERS")
+
+    # validasi: hanya OWNER, ADMIN, atau SELLER yang bisa pakai .unprem
+    if user.id != OWNER_ID and user.id not in seller_id and user.id not in admin_id:
+        return await message.reply("❌ Kamu tidak punya akses untuk menggunakan perintah ini.")
+
     msg = await message.reply("ꜱᴇᴅᴀɴɢ ᴍᴇᴍᴘʀᴏꜱᴇꜱ...")
     user_id = await extract_user(message)
     if not user_id:
-        return await msg.edit(
-            f"<b>{message.text} ᴜsᴇʀ_ɪᴅ/ᴜsᴇʀɴᴀᴍᴇ</b>"
-        )
+        return await msg.edit(f"<b>{message.text} ᴜsᴇʀ_ɪᴅ/ᴜsᴇʀɴᴀᴍᴇ</b>")
 
     try:
         user = await client.get_users(user_id)
@@ -90,18 +104,17 @@ async def _(client, message):
         return await msg.edit(f"""
 <blockquote><b>ɴᴀᴍᴇ: [{user.first_name} {user.last_name or ''}](tg://user?id={user.id})</b>
 <b>ɪᴅ: `{user.id}`</b>
-<b>ᴋᴇᴛᴇʀᴀɴɢᴀɴ: ᴛɪᴅᴀᴋ ᴛᴇʀᴅᴀꜰᴛᴀʀ</ci></b></blockquote>
-"""
-        )
+<b>ᴋᴇᴛᴇʀᴀɴɢᴀɴ: ᴛɪᴅᴀᴋ ᴛᴇʀᴅᴀꜰᴛᴀʀ</b></blockquote>
+""")
+
     try:
         await remove_from_vars(bot.me.id, "PREM_USERS", user.id)
         await rem_expired_date(user_id)
         return await msg.edit(f"""
 <blockquote><b>ɴᴀᴍᴇ: [{user.first_name} {user.last_name or ''}](tg://user?id={user.id})</b>
 <b>ɪᴅ: `{user.id}`</b>
-<b>ᴋᴇᴛᴇʀᴀɴɢᴀɴ: ᴛᴇʟᴀʜ ᴅɪ ʜᴀᴘᴜꜱ ᴅᴀʀɪ ᴅᴀᴛᴀʙᴀꜱᴇ</ci></b></blockquote>
-"""
-        )
+<b>ᴋᴇᴛᴇʀᴀɴɢᴀɴ: ᴛᴇʟᴀʜ ᴅɪʜᴀᴘᴜꜱ ᴅᴀʀɪ ᴅᴀᴛᴀʙᴀꜱᴇ</b></blockquote>
+""")
     except Exception as error:
         return await msg.edit(error)
         
@@ -178,38 +191,38 @@ async def _(client, message):
 @PY.UBOT("unseles")
 async def _(client, message):
     user = message.from_user
-    if user.id != OWNER_ID:
-        return
-    msg = await message.reply("ꜱᴇᴅᴀɴɢ ᴍᴇᴍᴘʀᴏꜱᴇꜱ...")
+
+    # cek apakah user adalah OWNER_ID atau ada di daftar ADMIN_USERS
+    admin_users = await get_list_from_vars(bot.me.id, "ADMIN_USERS")
+    if user.id != OWNER_ID and user.id not in admin_users:
+        return await message.reply("❌ Kamu tidak punya akses menghapus reseller.")
+
+    msg = await message.reply("sedang memproses...")
     user_id = await extract_user(message)
     if not user_id:
-        return await msg.edit(
-            f"<b>{message.text} ᴜsᴇʀ_ɪᴅ/ᴜsᴇʀɴᴀᴍᴇ</b>"
-        )
+        return await msg.edit(f"<b>{message.text} user_id/username</b>")
 
     try:
-        user = await client.get_users(user_id)
+        target = await client.get_users(user_id)
     except Exception as error:
         return await msg.edit(error)
 
     seles_users = await get_list_from_vars(bot.me.id, "SELER_USERS")
 
-    if user.id not in seles_users:
+    if target.id not in seles_users:
         return await msg.edit(f"""
-<blockquote><b>ɴᴀᴍᴇ: [{user.first_name} {user.last_name or ''}](tg://user?id={user.id})</b>
-<b>ɪᴅ: `{user.id}`</b>
-<b>ᴋᴇᴛᴇʀᴀɴɢᴀɴ: ᴛɪᴅᴀᴋ ᴛᴇʀᴅᴀꜰᴛᴀʀ</ci></b></blockquote>
-"""
-        )
+<blockquote><b>name: [{target.first_name} {target.last_name or ''}](tg://user?id={target.id})</b>
+<b>id: `{target.id}`</b>
+<b>keterangan: tidak terdaftar</b></blockquote>
+""")
 
     try:
-        await remove_from_vars(bot.me.id, "SELER_USERS", user.id)
+        await remove_from_vars(bot.me.id, "SELER_USERS", target.id)
         return await msg.edit(f"""
-<blockquote><b>ɴᴀᴍᴇ: [{user.first_name} {user.last_name or ''}](tg://user?id={user.id})</b>
-<b>ɪᴅ: `{user.id}`</b>
-<b>ᴋᴇᴛᴇʀᴀɴɢᴀɴ: ᴛᴇʟᴀʜ ᴅɪ ʜᴀᴘᴜꜱ ᴅᴀʀɪ ᴅᴀᴛᴀʙᴀꜱᴇ</ci></b></blockquote>
-"""
-        )
+<blockquote><b>name: [{target.first_name} {target.last_name or ''}](tg://user?id={target.id})</b>
+<b>id: `{target.id}`</b>
+<b>keterangan: telah dihapus dari database</b></blockquote>
+""")
     except Exception as error:
         return await msg.edit(error)
 
@@ -246,35 +259,45 @@ async def _(client, message):
         return await Sh.edit("ᴛɪᴅᴀᴋ ᴅᴀᴘᴀᴛ ᴍᴇɴɢᴀᴍʙɪʟ ᴅᴀꜰᴛᴀʀ ꜱᴇʟʟᴇʀ")
 
 
-@PY.UBOT("time")
+@PY.UBOT(["time", "settime", "set_time"])
 async def _(client, message):
     user = message.from_user
     if user.id != OWNER_ID:
         return
     Tm = await message.reply("processing . . .")
-    bajingan = message.command
-    if len(bajingan) != 3:
-        return await Tm.edit(f"gunakan /set_time user_id hari")
-    user_id = int(bajingan[1])
-    get_day = int(bajingan[2])
-    print(user_id , get_day)
+
+    # ambil argumen (command split)
+    args = message.command
+    if len(args) != 3:
+        return await Tm.edit(f"gunakan .time/.settime/.set_time user_id hari")
+
     try:
-        get_id = (await client.get_users(user_id)).id
-        user = await client.get_users(user_id)
+        user_id = int(args[1])
+        get_day = int(args[2])
+    except Exception:
+        return await Tm.edit("❌ Format salah!\nGunakan `.time user_id hari`")
+
+    try:
+        target = await client.get_users(user_id)
     except Exception as error:
         return await Tm.edit(error)
+
     if not get_day:
-        get_day = 30
+        get_day = 30  # default 30 hari
+
     now = datetime.now(timezone("Asia/Jakarta"))
-    expire_date = now + timedelta(days=int(get_day))
+    expire_date = now + timedelta(days=get_day)
+
+    # simpan expired date
     await set_expired_date(user_id, expire_date)
-    await Tm.edit(f"""
+
+    return await Tm.edit(f"""
 💬 INFORMATION
- name: {user.mention}
- id: {get_id}
- aktifkan_selama: {get_day} hari
-"""
-    )
+<b>name:</b> {target.mention}
+<b>id:</b> <code>{target.id}</code>
+<b>aktifkan_selama:</b> {get_day} hari
+<b>expired:</b> <code>{expire_date.strftime('%d-%m-%Y %H:%M')}</code>
+""")
 
 
 @PY.UBOT("cek")
