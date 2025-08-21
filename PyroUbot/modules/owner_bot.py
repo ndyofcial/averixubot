@@ -128,20 +128,25 @@ async def _(client, message):
     text = ""
     count = 0
     user = message.from_user
-    seller_id = await get_list_from_vars(bot.me.id, "SELER_USERS")
-    if user.id not in seller_id:
-        return
+
+    # hanya OWNER yang bisa akses
+    if user.id != OWNER_ID:
+        return await message.reply("❌ Kamu tidak punya akses untuk menggunakan perintah ini.")
+
     prem = await get_list_from_vars(bot.me.id, "PREM_USERS")
-    prem_users = []
 
     for user_id in prem:
         try:
-            user = await bot.get_users(user_id)
+            u = await bot.get_users(user_id)
             count += 1
-            userlist = f"• {count}: <a href=tg://user?id={user.id}>{user.first_name} {user.last_name or ''}</a> > <code>{user.id}</code>"
+            userlist = (
+                f"• {count}: <a href=tg://user?id={u.id}>{u.first_name} {u.last_name or ''}</a> "
+                f"> <code>{u.id}</code>"
+            )
+            text += f"<blockquote><b>{userlist}\n</b></blockquote>"
         except Exception:
             continue
-        text += f"<blockquote><b>{userlist}\n</blockquote></b>"
+
     if not text:
         await message.reply_text("ᴛɪᴅᴀᴋ ᴀᴅᴀ ᴘᴇɴɢɢᴜɴᴀ ʏᴀɴɢ ᴅɪᴛᴇᴍᴜᴋᴀɴ")
     else:
