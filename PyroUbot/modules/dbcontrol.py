@@ -571,11 +571,14 @@ async def _(client, message):
     user = message.from_user
     reseller_id = await get_list_from_vars(bot.me.id, "SELER_USERS")
     admin_id = await get_list_from_vars(bot.me.id, "ADMIN_USERS")
-    if user.id not in reseller_id:
-        return
+
+    # ✅ Cek kalau bukan reseller, admin, atau owner → ditolak
+    if user.id not in reseller_id and user.id not in admin_id and user.id != OWNER_ID:
+        return await message.reply("⛔ Kamu tidak punya akses ke perintah ini.")
+
     reply = message.reply_to_message
     args = message.text.split(maxsplit=2)[1:] if not reply else [str(reply.from_user.id)] + message.text.split(maxsplit=1)[1:]
-    
+
     if not args:
         return await message.reply(f"""
 <blockquote>**__⛔ Cara Penggunaan: <code>.prem username/userid waktu</code>
@@ -587,6 +590,7 @@ async def _(client, message):
 
     user_id, duration = args[0], args[1] if len(args) > 1 else "1b"
 
+    # ✅ Hitung total hari
     if duration.endswith("b"):
         duration_value = int(duration[:-1]) if duration[:-1].isdigit() else 1
         total_days = duration_value * 30
@@ -594,8 +598,9 @@ async def _(client, message):
         duration_value = int(duration[:-1]) if duration[:-1].isdigit() else 1
         total_days = duration_value
     else:
-        total_days = 30  
+        total_days = 30
 
+    # ✅ Batasi sesuai role
     if user.id in reseller_id and total_days > 30:
         return await message.reply("<b>⛔ Reseller hanya bisa memberikan maksimal 1 bulan (30 hari).</b>")
     if user.id in admin_id and total_days > 180:
@@ -603,18 +608,20 @@ async def _(client, message):
     if user.id == OWNER_ID and total_days > 3650:
         return await message.reply("<b>⛔ Maksimal premium adalah 10 tahun (3650 hari).</b>")
 
-    msg = await message.reply("**__⏳ Memproses...__**")
+    msg = await message.reply("⏳ Memproses...")
 
     try:
         target_user = await client.get_users(user_id)
     except Exception as error:
-        return await msg.edit(f"**__⛔ Error: {error}__**")
+        return await msg.edit(f"⛔ Error: {error}")
 
-    dataexp = await get_expired_date(user.id)
+    # ✅ Ambil expired target_user, bukan user
+    dataexp = await get_expired_date(target_user.id)
     if not dataexp:
         expired = "⛔ Belum berlangganan"
     else:
         expired = dataexp.astimezone(timezone("Asia/Jakarta")).strftime("%d-%m-%Y %H:%M")
+
     prem_users = await get_list_from_vars(bot.me.id, "PREM_USERS")
     if target_user.id in prem_users:
         return await msg.edit(f"""
