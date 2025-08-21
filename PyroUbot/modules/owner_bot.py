@@ -16,8 +16,9 @@ async def _(client, message):
     admin_id = await get_list_from_vars(bot.me.id, "ADMIN_USERS")
 
     # validasi: hanya OWNER, ADMIN, atau SELLER yang bisa pakai .prem
-    if user.id != OWNER_ID and user.id not in seller_id and user.id not in admin_id:
-        return await message.reply("❌ Kamu tidak punya akses untuk menggunakan perintah ini.")
+    allowed_users = {OWNER_ID, *seller_id, *admin_id}
+if user.id not in allowed_users:
+    return await message.reply("❌ Kamu tidak punya akses untuk menggunakan perintah ini.")
 
     user_id, get_bulan = await extract_user_and_reason(message)
     msg = await message.reply("memproses...")
@@ -85,8 +86,9 @@ async def _(client, message):
     admin_id = await get_list_from_vars(bot.me.id, "ADMIN_USERS")
 
     # validasi: hanya OWNER, ADMIN, atau SELLER yang bisa pakai .unprem
-    if user.id != OWNER_ID and user.id not in seller_id and user.id not in admin_id:
-        return await message.reply("❌ Kamu tidak punya akses untuk menggunakan perintah ini.")
+    allowed_users = {OWNER_ID, *seller_id, *admin_id}
+if user.id not in allowed_users:
+    return await message.reply("❌ Kamu tidak punya akses untuk menggunakan perintah ini.")
 
     msg = await message.reply("ꜱᴇᴅᴀɴɢ ᴍᴇᴍᴘʀᴏꜱᴇꜱ...")
     user_id = await extract_user(message)
@@ -257,43 +259,35 @@ async def _(client, message):
         return await Sh.edit("ᴛɪᴅᴀᴋ ᴅᴀᴘᴀᴛ ᴍᴇɴɢᴀᴍʙɪʟ ᴅᴀꜰᴛᴀʀ ꜱᴇʟʟᴇʀ")
 
 
-@PY.UBOT(["time", "settime", "set_time"])
+@PY.UBOT("time")
 async def _(client, message):
     user = message.from_user
     if user.id != OWNER_ID:
         return
     Tm = await message.reply("processing . . .")
-
-    args = message.command  # ini sudah list
-    if len(args) != 3:
-        return await Tm.edit("gunakan `.time user_id hari`")
-
+    bajingan = message.command
+    if len(bajingan) != 3:
+        return await Tm.edit(f"gunakan /set_time user_id hari")
+    user_id = int(bajingan[1])
+    get_day = int(bajingan[2])
+    print(user_id , get_day)
     try:
-        user_id = int(args[1])
-        get_day = int(args[2])
-    except Exception:
-        return await Tm.edit("❌ Format salah!\nGunakan `.time user_id hari`")
-
-    try:
-        target = await client.get_users(user_id)
+        get_id = (await client.get_users(user_id)).id
+        user = await client.get_users(user_id)
     except Exception as error:
-        return await Tm.edit(str(error))
-
+        return await Tm.edit(error)
     if not get_day:
-        get_day = 30  # default 30 hari
-
+        get_day = 30
     now = datetime.now(timezone("Asia/Jakarta"))
-    expire_date = now + timedelta(days=get_day)
-
+    expire_date = now + timedelta(days=int(get_day))
     await set_expired_date(user_id, expire_date)
-
-    return await Tm.edit(f"""
+    await Tm.edit(f"""
 💬 INFORMATION
-<b>name:</b> {target.mention}
-<b>id:</b> <code>{target.id}</code>
-<b>aktifkan_selama:</b> {get_day} hari
-<b>expired:</b> <code>{expire_date.strftime('%d-%m-%Y %H:%M')}</code>
-""")
+ name: {user.mention}
+ id: {get_id}
+ aktifkan_selama: {get_day} hari
+"""
+    )
 
 
 @PY.UBOT("cek")
