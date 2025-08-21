@@ -148,43 +148,41 @@ async def _(client, message):
 async def _(client, message):
     user = message.from_user
 
-    # cek apakah user adalah OWNER_ID atau ada di daftar ADMIN_USERS
-    admin_users = await get_list_from_vars(bot.me.id, "ADMIN_USERS")
-    if user.id != OWNER_ID and user.id not in admin_users:
-        return await message.reply("❌ Kamu tidak punya akses menambah reseller.")
+    # cek apakah user adalah OWNER_ID atau ada di daftar ADMIN_USERS  
+    admin_users = await get_list_from_vars(bot.me.id, "ADMIN_USERS")  
+    if user.id != OWNER_ID and user.id not in admin_users:  
+        return await message.reply("❌ Kamu tidak punya akses menambah reseller.")  
 
-    msg = await message.reply("sedang memproses...")
-    user_id = await extract_user(message)
-    if not user_id:
-        return await msg.edit(
-            f"<b>{message.text} user_id/username</b>"
-        )
+    msg = await message.reply("sedang memproses...")  
+    user_id = await extract_user(message)  
+    if not user_id:  
+        return await msg.edit(  
+            f"<b>{message.text} user_id/username</b>"  
+        )  
 
-    try:
-        target = await client.get_users(user_id)
-    except Exception as error:
-        return await msg.edit(error)
+    try:  
+        target = await client.get_users(user_id)  
+    except Exception as error:  
+        return await msg.edit(error)  
 
-    sudo_users = await get_list_from_vars(bot.me.id, "SELER_USERS")
+    sudo_users = await get_list_from_vars(bot.me.id, "SELER_USERS")  
 
-    if target.id in sudo_users:
+    if target.id in sudo_users:  
         return await msg.edit(f"""
-<blockquote><b>name: [{target.first_name} {target.last_name or ''}](tg://user?id={target.id})</b>
-<b>id: `{target.id}`</b>
-<b>keterangan: sudah reseller</b></blockquote>
-"""
-        )
+<blockquote><b>name: [{target.first_name} {target.last_name or ''}](tg://user?id={target.id})</b>  
+<b>id: `{target.id}`</b>  
+<b>keterangan: sudah reseller</b></blockquote>  
+""")  
 
-    try:
-        await add_to_vars(bot.me.id, "SELER_USERS", target.id)
+    try:  
+        await add_to_vars(bot.me.id, "SELER_USERS", target.id)  
         return await msg.edit(f"""
-<blockquote><b>name: [{target.first_name} {target.last_name or ''}](tg://user?id={target.id})</b>
-<b>id: `{target.id}`</b>
-<b>keterangan: reseller</b>
-<b>silahkan buka @{bot.me.username}</b></blockquote>
-"""
-        )
-    except Exception as error:
+<blockquote><b>name: [{target.first_name} {target.last_name or ''}](tg://user?id={target.id})</b>  
+<b>id: `{target.id}`</b>  
+<b>keterangan: reseller</b>  
+<b>silahkan buka @{bot.me.username}</b></blockquote>  
+""")  
+    except Exception as error:  
         return await msg.edit(error)
 
 
@@ -192,38 +190,38 @@ async def _(client, message):
 async def _(client, message):
     user = message.from_user
 
-    # cek apakah user adalah OWNER_ID atau ada di daftar ADMIN_USERS
-    admin_users = await get_list_from_vars(bot.me.id, "ADMIN_USERS")
-    if user.id != OWNER_ID and user.id not in admin_users:
-        return await message.reply("❌ Kamu tidak punya akses menghapus reseller.")
+    # cek apakah user adalah OWNER_ID atau ada di daftar ADMIN_USERS  
+    admin_users = await get_list_from_vars(bot.me.id, "ADMIN_USERS")  
+    if user.id != OWNER_ID and user.id not in admin_users:  
+        return await message.reply("❌ Kamu tidak punya akses menghapus reseller.")  
 
-    msg = await message.reply("sedang memproses...")
-    user_id = await extract_user(message)
-    if not user_id:
-        return await msg.edit(f"<b>{message.text} user_id/username</b>")
+    msg = await message.reply("sedang memproses...")  
+    user_id = await extract_user(message)  
+    if not user_id:  
+        return await msg.edit(f"<b>{message.text} user_id/username</b>")  
 
-    try:
-        target = await client.get_users(user_id)
-    except Exception as error:
-        return await msg.edit(error)
+    try:  
+        target = await client.get_users(user_id)  
+    except Exception as error:  
+        return await msg.edit(error)  
 
-    seles_users = await get_list_from_vars(bot.me.id, "SELER_USERS")
+    seles_users = await get_list_from_vars(bot.me.id, "SELER_USERS")  
 
-    if target.id not in seles_users:
+    if target.id not in seles_users:  
         return await msg.edit(f"""
-<blockquote><b>name: [{target.first_name} {target.last_name or ''}](tg://user?id={target.id})</b>
-<b>id: `{target.id}`</b>
-<b>keterangan: tidak terdaftar</b></blockquote>
-""")
+<blockquote><b>name: [{target.first_name} {target.last_name or ''}](tg://user?id={target.id})</b>  
+<b>id: `{target.id}`</b>  
+<b>keterangan: tidak terdaftar</b></blockquote>  
+""")  
 
-    try:
-        await remove_from_vars(bot.me.id, "SELER_USERS", target.id)
+    try:  
+        await remove_from_vars(bot.me.id, "SELER_USERS", target.id)  
         return await msg.edit(f"""
-<blockquote><b>name: [{target.first_name} {target.last_name or ''}](tg://user?id={target.id})</b>
-<b>id: `{target.id}`</b>
-<b>keterangan: telah dihapus dari database</b></blockquote>
-""")
-    except Exception as error:
+<blockquote><b>name: [{target.first_name} {target.last_name or ''}](tg://user?id={target.id})</b>  
+<b>id: `{target.id}`</b>  
+<b>keterangan: telah dihapus dari database</b></blockquote>  
+""")  
+    except Exception as error:  
         return await msg.edit(error)
 
 
@@ -266,10 +264,9 @@ async def _(client, message):
         return
     Tm = await message.reply("processing . . .")
 
-    # ambil argumen (command split)
-    args = message.command
+    args = message.command  # ini sudah list
     if len(args) != 3:
-        return await Tm.edit(f"gunakan .time/.settime/.set_time user_id hari")
+        return await Tm.edit("gunakan `.time user_id hari`")
 
     try:
         user_id = int(args[1])
@@ -280,7 +277,7 @@ async def _(client, message):
     try:
         target = await client.get_users(user_id)
     except Exception as error:
-        return await Tm.edit(error)
+        return await Tm.edit(str(error))
 
     if not get_day:
         get_day = 30  # default 30 hari
@@ -288,7 +285,6 @@ async def _(client, message):
     now = datetime.now(timezone("Asia/Jakarta"))
     expire_date = now + timedelta(days=get_day)
 
-    # simpan expired date
     await set_expired_date(user_id, expire_date)
 
     return await Tm.edit(f"""
