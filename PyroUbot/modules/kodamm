@@ -1,0 +1,76 @@
+from pyrogram import Client, filters
+import random
+from PyroUbot import *
+
+__MODULE__ = "ᴋᴏᴅᴀᴍ"
+__HELP__ = """
+<b>⦪ ʙᴀɴᴛᴜᴀɴ ᴜɴᴛᴜᴋ ᴋᴏᴅᴀᴍ ⦫</b>
+
+<blockquote><b>⎆ perintah :
+ᚗ <code>{0}ckodam</code> reply chat
+⊷ untuk melihat kodam sesorang.
+</blockquote></b>
+"""
+
+KHODAM_LIST = [
+    "Naga Hitam Dimensi Ketujuh",
+    "Macan Gaib Penjaga Pintu Alam",
+    "Siluman Kelelawar Pemakan Cahaya",
+    "Jin Api Neraka Abadi",
+    "Raja Ular Bermahkota Kabut",
+    "Harimau Putih Bersayap Emas",
+    "Singa Gaib Penguasa Rembulan",
+    "Hantu Tertawa di Balik Bayangan",
+    "Pendekar Ilusi Tak Terlihat",
+    "Burung Gagak Berlidah Petir",
+    "Banteng Sakti Bertanduk Berlian",
+    "Raksasa Mata Seribu Pengintai",
+    "Dewi Penunggu Langit Senja",
+    "Kera Sakti Pemegang Kitab Terlarang",
+    "Jin Pasir Penghisap Nyawa",
+    "Rajawali Bermata Iblis",
+    "Hantu Kayu Berbisik",
+    "Lelembut Merah Pengantar Mimpi",
+    "Makhluk Bayangan Penjaga Gerbang Gaib",
+    "Siluman Serigala Bersuara Manusia",
+    "Roh Kegelapan dari Masa Depan",
+    "Monyet Sakti Berjubah Api",
+]
+
+ENERGY_STATUS_LIST = [
+    "Stabil ⚡", 
+    "Tidak Stabil ❌", 
+    "Sangat Kuat 💥", 
+    "Melemah 🌀", 
+    "Overload 🔥", 
+    "Kosong 🏳", 
+    "Terkendali ✅"
+]
+
+@PY.UBOT("ckodam")
+async def _(client, message):
+    if message.reply_to_message:
+        user = message.reply_to_message.from_user
+    elif len(message.command) > 1:
+        user = await client.get_users(message.command[1])
+    else:
+        user = message.from_user
+    
+    if user:
+        username = f"@{user.username}" if user.username else user.first_name
+        energy_percent = random.randint(10, 100)
+        khodam = random.choice(KHODAM_LIST)
+        energy_status = random.choice(ENERGY_STATUS_LIST)
+
+        response = f"""
+<blockquote>**__✨ **Deteksi Khodam Aktif** ✨
+
+👤 **Subjek**: {username}
+🔍 **Analisis Energi**: [{energy_percent}%] {"█" * (energy_percent // 10)}
+🔮 **Khodam Terdeteksi**: {khodam}
+
+🌀 **Energi Mistis**: {energy_status}__**</blockquote>
+"""
+        await message.reply_text(response)
+    else:
+        await message.reply_text("⛔ **Gagal mendeteksi pengguna...**")

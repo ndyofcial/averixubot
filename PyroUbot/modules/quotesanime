@@ -1,0 +1,52 @@
+import requests
+import random
+from PyroUbot import *
+
+__MODULE__ = "ϙᴜᴏᴛᴇs ᴀɴɪᴍᴇ"
+__HELP__ = """
+<b>⦪ ʙᴀɴᴛᴜᴀɴ ᴜɴᴛᴜᴋ ϙᴜᴏᴛᴇs ᴀɴɪᴍᴇ ⦫</b>
+<blockquote>⎆ perintah :
+ᚗ <code>{0}qanime</code></blockquote>
+"""
+
+def get_random_qa(query):
+    API_URL = "https://api.botcahx.eu.org/api/random/quotesanime"
+    API_KEY = "moire_mor"
+
+    params = {"text": query}
+
+    try:
+        response = requests.get(API_URL, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        if data.get("status") and "result" in data:
+            qa_list = data["result"]
+            if qa_list:
+                quote = random.choice(qa_list)
+                return (
+                    f"<blockquote><b>📖 **{quote['karakter']}**\n\n</b></blockquote>"
+                    f"<blockquote><b>{quote['anime']}\n\n</b></blockquote>"
+                    f"<blockquote><b>{quote['quotes']}\n\n</b></blockquote>"
+                    f"<blockquote><b>🔗 [Link]({quote['link']})</b></blockquote>"
+                )
+        return "<blockquote><b><emoji id=5215204871422093648>❌</emoji> Tidak ditemukan qanime yang sesuai.</b></blockquote>"
+
+    except requests.exceptions.Timeout:
+        return "<blockquote><b><emoji id=5454415424319931791>⌛️</emoji> Permintaan waktu habis. Coba lagi nanti.</b></blockquote>"
+    except requests.exceptions.RequestException as e:
+        return f"<blockquote><b><emoji id=5213205860498549992>⚠️</emoji> Terjadi kesalahan saat mengambil quotes: {e}</b></blockquote>"
+
+@PY.UBOT("qanime")
+async def qa_handler(client, message):
+    if len(message.command) < 0:
+        return await message.reply(
+            "<blockquote><b>**__<emoji id=5213205860498549992>⚠️</emoji> Gunakan perintah: `>qanime <kata_kunci>`\n</b></blockquote>"
+            "<blockquote><b>Contoh: `>qanime cat`__**</b></blockquote>"
+        )
+
+    query = " ".join(message.command[0:])
+    await message.reply("<blockquote><b><i><emoji id=4967797089971995307>🔍</emoji> Sedang mencari quotes...</i></b></blockquote>")
+
+    qa_text = get_random_qa(query)
+
+    await message.reply(qa_text, disable_web_page_preview=True)

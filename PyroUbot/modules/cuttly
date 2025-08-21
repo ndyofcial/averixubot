@@ -1,0 +1,62 @@
+from PyroUbot import *
+import random
+import requests
+from pyrogram.enums import ChatAction, ParseMode
+from pyrogram import filters
+from pyrogram.types import Message
+
+
+__MODULE__ = "ᴄᴜᴛᴛʟʏ"
+__HELP__ = """
+<b>⦪ ʙᴀɴᴛᴜᴀɴ ᴜɴᴛᴜᴋ ᴄᴜᴛᴛʟʏ ⦫</b>
+<blockquote>⎆ perintah :
+ᚗ <code>{0}cuttly</code> link
+⊶ Dapat memperpendek link url yang panjang.
+</blockquote>
+"""
+
+@PY.UBOT("cuttly")
+@PY.TOP_CMD
+async def chat_gpt(client, message):
+    try:
+        await client.send_chat_action(message.chat.id, ChatAction.TYPING)
+
+        if len(message.command) < 2:
+            await message.reply_text(
+                "<emoji id=5019523782004441717>❌</emoji>mohon gunakan format\ncontoh : .tinyurl https://google.com"
+            )
+        else:
+            prs = await message.reply_text(f"<emoji id=5319230516929502602>🔍</emoji>menjawab....")
+            a = message.text.split(' ', 1)[1]
+            api_url = f'https://api.botcahx.eu.org/api/linkshort/cuttly?link={a}&apikey=moire'
+
+        try:
+            response = requests.get(api_url)
+            data = response.json()
+
+            if not data.get("status") or "result" not in data:
+                await message.reply_text("<blockquote><b><emoji id=5215204871422093648>❌</emoji> Gagal membuat shortlink..</b></blockquote>", quote=True)
+                return
+
+            results = data["result"]
+            response_text = "<blockquote><b><emoji id=4943239162758169437>🤩</emoji> **Hasil Shortlink :**\n\n</b></blockquote>"
+
+            for item in results:
+                status = item["status"]
+                title = item["title"]
+                date = item["date"]
+                fullLink = item["fullLink"]
+                shortLink = item["shortLink"]
+                
+                response_text += (
+                f"""
+<blockquote><b>🪧 Status : {status}
+📜 Title : {title}
+🗓️ Date : {date}
+🌐 Full link : {fulllink}
+💫 Shortlink : {shortlink}</b></blockquote>"""
+               )
+        except KeyError:
+            await message.reply_text("Error accessing the response.")
+    except Exception as e:
+        await message.reply_text(f"<blockquote><b><emoji id=5215204871422093648>❌</emoji> Terjadi kesalahan:\n`{str(e)}`</b></blockquote>", quote=True)

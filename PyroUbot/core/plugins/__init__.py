@@ -1,0 +1,1 @@
+from PyroUbot.core.plugins.sct import *

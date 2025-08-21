@@ -1,0 +1,59 @@
+import requests
+import wget
+import os
+from pyrogram import Client
+from PyroUbot import *
+
+__MODULE__ = "ϙᴜᴏᴛᴇs ᴀɴɪᴍᴇ"
+__HELP__ = """
+<b>⦪ ʙᴀɴᴛᴜᴀɴ ᴜɴᴛᴜᴋ ϙᴜᴏᴛᴇs ᴀɴɪᴍᴇ ⦫</b>
+<blockquote>
+⎆ perintah :
+ᚗ <code>{0}qanime</code> nama kota
+⊶ cek info cuaca di kota kota besar.
+
+</blockquote>
+"""
+
+@PY.UBOT("qanime")
+async def cuaca(client, message):
+    ggl = await EMO.GAGAL(client)
+    sks = await EMO.BERHASIL(client)
+    prs = await EMO.PROSES(client)
+    
+    jalan = await message.reply(f"{prs} Processing...")
+    a = message.text.split(' ', 1)[1]
+    chat_id = message.chat.id
+    url = f"https://api.botcahx.eu.org/api/random/quotesanime?apikey=moire_mor"
+        
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json()
+            hasil = data['result'][:1]
+            anime = hasil['anime']
+            episode = hasil['episode']
+            quotes = hasil['quotes']
+            link = hasil['link']
+            photoUrl = hasil["gambar"]
+            caption = f"""
+<blockquote><b><emoji id=5080331039922980916>⚡️</emoji> Random Quotes Anime <emoji id=5080331039922980916>⚡️</emoji></b></blockquote>
+<blockquote><b><emoji id=6206162931663508973>💜</emoji><emoji id=6204012166660494973>💜</emoji> Anime: <code>{anime}</code></b>
+<b><emoji id=6203909748870354847>💜</emoji><emoji id=6203792139780887891>💜</emoji> Episode: <code>{episode}</code></b>
+<b><emoji id=6203959201123800232>💜</emoji><emoji id=6204000918141146257>💜</emoji> Quotes: <code>{quotes}</code></b>
+<emoji id=6203978081800033988>💜</emoji><emoji id=6206004318521267252>💜</emoji> <a href='{link}'>Link Quotes</a></blockquote>
+"""
+            photo_path = wget.download(photoUrl)
+            await client.send_photo(chat_id, caption=caption, photo=photo_path)
+            if os.path.exists(photo_path):
+                os.remove(photo_path)
+            
+            await jalan.delete()
+        else:
+            await jalan.edit(f"{ggl} No 'result' key found in the response.")
+    
+    except requests.exceptions.RequestException as e:
+        await jalan.edit(f"{ggl} Request failed: {e}")
+    
+    except Exception as e:
+        await jalan.edit(f"{ggl} An error occurred: {e}")
