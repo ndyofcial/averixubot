@@ -15,10 +15,11 @@ async def _(client, message):
     seller_id = await get_list_from_vars(bot.me.id, "SELER_USERS")
     admin_id = await get_list_from_vars(bot.me.id, "ADMIN_USERS")
 
-    # validasi: hanya OWNER, ADMIN, atau SELLER yang bisa pakai .prem
-    allowed_users = {OWNER_ID, *seller_id, *admin_id}
-if user.id not in allowed_users:
-    return await message.reply("❌ Kamu tidak punya akses untuk menggunakan perintah ini.")
+    # cek apakah user adalah OWNER, ADMIN, atau SELLER
+    if user.id != OWNER_ID and user.id not in seller_id and user.id not in admin_id:
+        return await message.reply("❌ Kamu tidak punya akses untuk menggunakan perintah ini.")
+
+    # ... lanjut kode prem di sini ...
 
     user_id, get_bulan = await extract_user_and_reason(message)
     msg = await message.reply("memproses...")
@@ -85,10 +86,11 @@ async def _(client, message):
     seller_id = await get_list_from_vars(bot.me.id, "SELER_USERS")
     admin_id = await get_list_from_vars(bot.me.id, "ADMIN_USERS")
 
-    # validasi: hanya OWNER, ADMIN, atau SELLER yang bisa pakai .unprem
-    allowed_users = {OWNER_ID, *seller_id, *admin_id}
-if user.id not in allowed_users:
-    return await message.reply("❌ Kamu tidak punya akses untuk menggunakan perintah ini.")
+    # cek apakah user adalah OWNER, ADMIN, atau SELLER
+    if user.id != OWNER_ID and user.id not in seller_id and user.id not in admin_id:
+        return await message.reply("❌ Kamu tidak punya akses untuk menggunakan perintah ini.")
+
+    # ... lanjut kode unprem di sini ...
 
     msg = await message.reply("ꜱᴇᴅᴀɴɢ ᴍᴇᴍᴘʀᴏꜱᴇꜱ...")
     user_id = await extract_user(message)
