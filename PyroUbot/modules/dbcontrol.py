@@ -600,13 +600,15 @@ async def _(client, message):
     else:
         total_days = 30
 
-    # ✅ Batasi sesuai role
-    if user.id in reseller_id and total_days > 30:
-        return await message.reply("<b>⛔ Reseller hanya bisa memberikan maksimal 1 bulan (30 hari).</b>")
-    if user.id in admin_id and total_days > 180:
-        return await message.reply("<b>⛔ Admin hanya bisa memberikan maksimal 6 bulan (180 hari).</b>")
-    if user.id == OWNER_ID and total_days > 3650:
-        return await message.reply("<b>⛔ Maksimal premium adalah 10 tahun (3650 hari).</b>")
+# ✅ Batasi sesuai role
+if str(user.id) in reseller_id and total_days > 30:
+    return await message.reply("**⛔ Reseller hanya bisa memberikan maksimal 1 bulan (30 hari).**")
+
+if str(user.id) in admin_id and total_days > 180:
+    return await message.reply("**⛔ Admin hanya bisa memberikan maksimal 6 bulan (180 hari).**")
+
+if str(user.id) == str(OWNER_ID) and total_days > 3650:
+    return await message.reply("**⛔ Maksimal premium adalah 10 tahun (3650 hari).**")
 
     msg = await message.reply("⏳ Memproses...")
 
