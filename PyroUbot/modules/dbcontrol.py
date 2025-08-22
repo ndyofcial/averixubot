@@ -10,7 +10,7 @@ from PyroUbot import *
 __MODULE__ = "ᴅʙ ᴄᴏɴᴛʀᴏʟ"
 __HELP__ = """
 <b>⦪ ʙᴀɴᴛᴜᴀɴ ᴜɴᴛᴜᴋ ᴅʙ ᴄᴏɴᴛʀᴏʟ ⦫</b>
-<blockquote>
+<blockquote expandable>
 ⎆ perintah :
 ᚗ <code>{0}prem</code> 1b
 ᚗ <code>{0}unprem</code>
@@ -27,20 +27,35 @@ __HELP__ = """
 
 ᚗ <code>{0}seles</code>
 ᚗ <code>{0}unseles</code>
-ᚗ <code>{0}getseles</code></blockquote>
+ᚗ <code>{0}getseles</code>
 
 ᚗ <code>{0}time</code> id hari
   ⊶ Untuk Menambah - Mengurangi Masa Aktif User
 
 ᚗ <code>{0}cek</code> id
-  ⊶ Untuk Melihat Masa Aktif User</blockquote></b>
+  ⊶ Untuk Melihat Masa Aktif User
+</blockquote>
 """
 
 @PY.BOT("prem")
-@PY.SELLER
 async def _(client, message):
     user_id, get_bulan = await extract_user_and_reason(message)
     msg = await message.reply("memproses...")
+
+    # ambil list seller, admin & superultra
+    seles_users = await get_list_from_vars(client.me.id, "SELER_USERS")
+    admin_users = await get_list_from_vars(client.me.id, "ADMIN_USERS")
+    superultra_users = await get_list_from_vars(client.me.id, "ULTRA_PREM")
+
+    # kalau bukan seller, bukan admin, bukan superultra → stop (tanpa respon)
+    if (
+        message.from_user.id not in seles_users
+        and message.from_user.id not in admin_users
+        and message.from_user.id not in superultra_users
+        and message.from_user.id != OWNER_ID
+    ):
+        return
+
     if not user_id:
         return await msg.edit(f"<b>{message.text} ᴜsᴇʀ_ɪᴅ/ᴜsᴇʀɴᴀᴍᴇ - ʙᴜʟᴀɴ</b>")
 
@@ -48,6 +63,7 @@ async def _(client, message):
         user = await client.get_users(user_id)
     except Exception as error:
         return await msg.edit(error)
+
     if not get_bulan:
         get_bulan = 1
 
@@ -57,7 +73,7 @@ async def _(client, message):
         return await msg.edit(f"""
 <blockquote><b>⎆ ɴᴀᴍᴇ: [{user.first_name} {user.last_name or ''}](tg://user?id={user.id})</b>
 <b>⎆ ɪᴅ: {user.id}</b>
-<b>⎆ ᴋᴇᴛᴇʀᴀɴɢᴀɴ: ꜱᴜᴅᴀʜ ᴘʀᴇᴍɪᴜᴍ</ci></b>
+<b>⎆ ᴋᴇᴛᴇʀᴀɴɢᴀɴ: ꜱᴜᴅᴀʜ ᴘʀᴇᴍɪᴜᴍ</b>
 <b>⎆ ᴇxᴘɪʀᴇᴅ: {get_bulan} ʙᴜʟᴀɴ</b></blockquote>
 """
         )
@@ -102,14 +118,26 @@ async def _(client, message):
 
 
 @PY.BOT("unprem")
-@PY.OWNER
 async def _(client, message):
     msg = await message.reply("sedang memproses...")
+
+    # ambil list seller, admin & superultra
+    seles_users = await get_list_from_vars(client.me.id, "SELER_USERS")
+    admin_users = await get_list_from_vars(client.me.id, "ADMIN_USERS")
+    superultra_users = await get_list_from_vars(client.me.id, "ULTRA_PREM")
+
+    # kalau bukan seller, bukan admin, bukan superultra, bukan OWNER → stop (tanpa respon)
+    if (
+        message.from_user.id not in seles_users
+        and message.from_user.id not in admin_users
+        and message.from_user.id not in superultra_users
+        and message.from_user.id != OWNER_ID
+    ):
+        return
+
     user_id = await extract_user(message)
     if not user_id:
-        return await msg.edit(
-            f"<b>{message.text} user_id/username</b>"
-        )
+        return await msg.edit(f"<b>{message.text} user_id/username</b>")
 
     try:
         user = await client.get_users(user_id)
@@ -124,7 +152,7 @@ async def _(client, message):
  <blockquote><b>⎆ name: [{user.first_name} {user.last_name or ''}](tg://user?id={user.id})</b>
  <b>⎆ id: {user.id}</b>
  <b>⎆ keterangan: tidak dalam daftar</b></blockquote>
- """
+"""
         )
     try:
         await remove_from_vars(client.me.id, "PREM_USERS", user.id)
@@ -163,23 +191,33 @@ async def _(client, message):
 
 
 @PY.BOT("seles")
-@PY.ADMIN
 async def _(client, message):
     msg = await message.reply("sedang memproses...")
+
+    # ambil list admin & superultra
+    superultra_users = await get_list_from_vars(client.me.id, "ULTRA_PREM")
+    admin_users = await get_list_from_vars(client.me.id, "ADMIN_USERS")
+
+    # kalau bukan OWNER, bukan admin, bukan superultra → langsung stop (tanpa respon)
+    if (
+        message.from_user.id != OWNER_ID
+        and message.from_user.id not in superultra_users
+        and message.from_user.id not in admin_users
+    ):
+        return
+
     user_id = await extract_user(message)
     if not user_id:
-        return await msg.edit(
-            f"<b>{message.text} user_id/username</b>"
-        )
+        return await msg.edit(f"<b>{message.text} user_id/username</b>")
 
     try:
         user = await client.get_users(user_id)
     except Exception as error:
         return await msg.edit(error)
 
-    sudo_users = await get_list_from_vars(client.me.id, "SELER_USERS")
+    seles_users = await get_list_from_vars(client.me.id, "SELER_USERS")
 
-    if user.id in sudo_users:
+    if user.id in seles_users:
         return await msg.edit(f"""
  ɪɴғᴏʀᴍᴀᴛɪᴏɴ :
  <blockquote><b>⎆ name: [{user.first_name} {user.last_name or ''}](tg://user?id={user.id})</b>
@@ -202,14 +240,24 @@ async def _(client, message):
 
 
 @PY.BOT("unseles")
-@PY.OWNER
 async def _(client, message):
     msg = await message.reply("sedang memproses...")
+
+    # ambil list admin & superultra
+    superultra_users = await get_list_from_vars(client.me.id, "ULTRA_PREM")
+    admin_users = await get_list_from_vars(client.me.id, "ADMIN_USERS")
+
+    # kalau bukan OWNER, bukan admin, bukan superultra → langsung stop (tanpa respon)
+    if (
+        message.from_user.id != OWNER_ID
+        and message.from_user.id not in superultra_users
+        and message.from_user.id not in admin_users
+    ):
+        return
+
     user_id = await extract_user(message)
     if not user_id:
-        return await msg.edit(
-            f"<b>{message.text} user_id/username</b>"
-        )
+        return await msg.edit(f"<b>{message.text} user_id/username</b>")
 
     try:
         user = await client.get_users(user_id)
@@ -270,7 +318,7 @@ async def _(client, message):
         return await Sh.edit("tidak dapat mengambil daftar seller")
 
 
-@PY.BOT("time")
+@PY.BOT("set_time")
 @PY.OWNER
 async def _(client, message):
     Tm = await message.reply("processing . . .")
@@ -347,7 +395,7 @@ async def _(client, message):
 
     # kalau bukan OWNER & bukan superultra → tolak
     if message.from_user.id != OWNER_ID and message.from_user.id not in superultra_users:
-        return await msg.edit("⚠️ Kamu tidak punya akses ke perintah ini.")
+        return 
 
     user_id = await extract_user(message)
     if not user_id:
@@ -383,14 +431,19 @@ async def _(client, message):
 
 
 @PY.BOT("unadmin")
-@PY.OWNER
 async def _(client, message):
     msg = await message.reply("sedang memproses...")
+
+    # ambil list superultra
+    superultra_users = await get_list_from_vars(client.me.id, "ULTRA_PREM")
+
+    # kalau bukan OWNER & bukan superultra → langsung stop (tanpa respon)
+    if message.from_user.id != OWNER_ID and message.from_user.id not in superultra_users:
+        return
+
     user_id = await extract_user(message)
     if not user_id:
-        return await msg.edit(
-            f"{message.text} user_id/username"
-        )
+        return await msg.edit(f"{message.text} user_id/username")
 
     try:
         user = await client.get_users(user_id)
@@ -404,7 +457,7 @@ async def _(client, message):
 ⎆  INFORMATION
 ⎆ name: [{user.first_name} {user.last_name or ''}](tg://user?id={user.id})
 ⎆ id: {user.id}
-⎆ keterangan: tidak daam daftar
+⎆ keterangan: tidak dalam daftar
 """
         )
 
@@ -508,6 +561,7 @@ async def _(client, message):
         )
     except Exception as error:
         return await msg.edit(error)
+
 
 @PY.BOT("rmultra")
 @PY.OWNER
