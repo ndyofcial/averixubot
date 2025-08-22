@@ -36,7 +36,7 @@ __HELP__ = """
   ⊶ Untuk Melihat Masa Aktif User</blockquote></b>
 """
 
-@PY.BOT("prem")
+@PY.UBOT("prem")
 @PY.SELLER
 async def _(client, message):
     user_id, get_bulan = await extract_user_and_reason(message)
@@ -101,7 +101,7 @@ async def _(client, message):
         return await msg.edit(error)
 
 
-@PY.BOT("unprem")
+@PY.UBOT("unprem")
 @PY.OWNER
 async def _(client, message):
     msg = await message.reply("sedang memproses...")
@@ -140,7 +140,7 @@ async def _(client, message):
         return await msg.edit(error)
         
 
-@PY.BOT("getprem")
+@PY.UBOT("getprem")
 @PY.OWNER
 async def _(client, message):
     text = ""
@@ -162,7 +162,7 @@ async def _(client, message):
         await message.reply_text(text)
 
 
-@PY.BOT("seles")
+@PY.UBOT("seles")
 @PY.ADMIN
 async def _(client, message):
     msg = await message.reply("sedang memproses...")
@@ -201,7 +201,7 @@ async def _(client, message):
         return await msg.edit(error)
 
 
-@PY.BOT("unseles")
+@PY.UBOT("unseles")
 @PY.OWNER
 async def _(client, message):
     msg = await message.reply("sedang memproses...")
@@ -240,7 +240,7 @@ async def _(client, message):
         return await msg.edit(error)
 
 
-@PY.BOT("getseles")
+@PY.UBOT("getseles")
 @PY.OWNER
 async def _(client, message):
     Sh = await message.reply("sedang memproses...")
@@ -270,7 +270,7 @@ async def _(client, message):
         return await Sh.edit("tidak dapat mengambil daftar seller")
 
 
-@PY.BOT("time")
+@PY.UBOT("time")
 @PY.OWNER
 async def _(client, message):
     Tm = await message.reply("processing . . .")
@@ -299,7 +299,7 @@ async def _(client, message):
     )
 
 
-@PY.BOT("cek")
+@PY.UBOT("cek")
 @PY.SELLER
 async def _(client, message):
     Sh = await message.reply("processing . . .")
@@ -338,7 +338,7 @@ async def _(client, message):
         )
 
 
-@PY.BOT("addadmin")
+@PY.UBOT("addadmin")
 @PY.OWNER
 async def _(client, message):
     msg = await message.reply("sedang memproses...")
@@ -377,7 +377,7 @@ id: {user.id}
         return await msg.edit(error)
 
 
-@PY.BOT("unadmin")
+@PY.UBOT("unadmin")
 @PY.OWNER
 async def _(client, message):
     msg = await message.reply("sedang memproses...")
@@ -416,7 +416,7 @@ async def _(client, message):
         return await msg.edit(error)
 
 
-@PY.BOT("getadmin")
+@PY.UBOT("getadmin")
 @PY.OWNER
 async def _(client, message):
     Sh = await message.reply("sedang memproses...")
@@ -445,7 +445,7 @@ async def _(client, message):
     else:
         return await Sh.edit("tidak dapat mengambil daftar admin")
 
-@PY.BOT("superultra")
+@PY.UBOT("superultra")
 @PY.OWNER
 async def _(client, message):
     user_id, get_bulan = await extract_user_and_reason(message)
@@ -504,7 +504,7 @@ async def _(client, message):
     except Exception as error:
         return await msg.edit(error)
 
-@PY.BOT("rmultra")
+@PY.UBOT("rmultra")
 @PY.OWNER
 async def _(client, message):
     msg = await message.reply("sedang memproses...")
@@ -541,7 +541,7 @@ async def _(client, message):
         return await msg.edit(error)
         
 
-@PY.BOT("getultra")
+@PY.UBOT("getultra")
 @PY.OWNER
 async def _(client, message):
     prem = await get_list_from_vars(client.me.id, "ULTRA_PREM")
