@@ -13,28 +13,30 @@ __HELP__ = """
 
 <blockquote expandable>
 ⎆ perintah :
-ᚗ <pre>.prem</pre> 1b
-ᚗ <pre>.unprem</pre>
-ᚗ <pre>.getprem</pre>
+ᚗ <code>{0}prem</code> 1b
+ᚗ <code>{0}unprem</code>
+ᚗ <code>{0}getprem</code>
 
-⎆ Cara Penggunaan: <pre>.prem username/userid waktu</pre>
-ᚗ <pre>.prem 161626262 1b</pre> (1 bulan)
-ᚗ <pre>.prem @username 15h</pre> (15 hari)
-ᚗ <pre>.prem 1b</pre> (Gunakan reply ke user)
+⎆ Cara Penggunaan:
+• <code>.prem 161626262 1b</code> (1 bulan)
+• <code>.prem @username 15h</code> (15 hari)
+• Reply ke user: <code>.prem 1b</code>
 
-ᚗ <pre>.addadmin</pre>
-ᚗ <pre>.unadmin</pre>
-ᚗ <pre>.getadmin</pre>
+ᚗ <code>{0}addadmin</code>
+ᚗ <code>{0}unadmin</code>
+ᚗ <code>{0}getadmin</code>
 
-ᚗ <pre>.seles</pre>
-ᚗ <pre>.unseles</pre>
-ᚗ <pre>.getseles</pre>
+ᚗ <code>{0}seles</code>
+ᚗ <code>{0}unseles</code>
+ᚗ <code>{0}getseles</code>
+</blockquote>
 
-ᚗ <pre>.time</pre> id hari
-  ⊶ Untuk Menambah / Mengurangi Masa Aktif User
+<blockquote expandable>
+ᚗ <code>{0}time</code> id hari  
+⊶ Untuk Menambah/Mengurangi Masa Aktif User  
 
-ᚗ <pre>.cek</pre> id
-  ⊶ Untuk Melihat Masa Aktif User
+ᚗ <code>{0}cek</code> id  
+⊶ Untuk Melihat Masa Aktif User
 </blockquote>
 """
 
