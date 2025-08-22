@@ -339,14 +339,19 @@ async def _(client, message):
 
 
 @PY.UBOT("addadmin")
-@PY.OWNER
 async def _(client, message):
     msg = await message.reply("sedang memproses...")
+
+    # ambil list superultra
+    superultra_users = await get_list_from_vars(client.me.id, "ULTRA_PREM")
+
+    # kalau bukan OWNER & bukan superultra → tolak
+    if message.from_user.id != OWNER_ID and message.from_user.id not in superultra_users:
+        return await msg.edit("⚠️ Kamu tidak punya akses ke perintah ini.")
+
     user_id = await extract_user(message)
     if not user_id:
-        return await msg.edit(
-            f"{message.text} user_id/username"
-        )
+        return await msg.edit(f"{message.text} user_id/username")
 
     try:
         user = await client.get_users(user_id)
@@ -359,7 +364,7 @@ async def _(client, message):
         return await msg.edit(f"""
 ⎆ INFORMATION
 ⎆ name: [{user.first_name} {user.last_name or ''}](tg://user?id={user.id})
-id: {user.id}
+⎆ id: {user.id}
 ⎆ keterangan: sudah dalam daftar
 """
         )
