@@ -63,7 +63,7 @@ async def _(client, message):
     else:
         ub_prefix = []
         for prefix in message.command[1:]:
-            if prefix.lower() == "no":
+            if prefix.lower() == "none":
                 ub_prefix.append("")
             else:
                 ub_prefix.append(prefix)
