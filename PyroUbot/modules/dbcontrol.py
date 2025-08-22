@@ -569,13 +569,11 @@ async def _(client, message):
 @PY.UBOT("prem")
 async def _(client, message):
     user = message.from_user
+
     reseller_id = await get_list_from_vars(bot.me.id, "SELER_USERS")
     admin_id = await get_list_from_vars(bot.me.id, "ADMIN_USERS")
 
-    # ✅ Cek kalau bukan reseller, admin, atau owner → ditolak
-    if str(user.id) not in reseller_id and str(user.id) not in admin_id and str(user.id) != str(OWNER_ID):
-        return await message.reply("⛔ Kamu tidak punya akses ke perintah ini.")
-
+    # Ambil user_id dan duration
     reply = message.reply_to_message
     args = message.text.split(maxsplit=2)[1:] if not reply else [str(reply.from_user.id)] + message.text.split(maxsplit=1)[1:]
 
@@ -590,7 +588,7 @@ async def _(client, message):
 
     user_id, duration = args[0], args[1] if len(args) > 1 else "1b"
 
-    # ✅ Hitung total hari
+    # Hitung total hari
     if duration.endswith("b"):
         duration_value = int(duration[:-1]) if duration[:-1].isdigit() else 1
         total_days = duration_value * 30
@@ -598,17 +596,20 @@ async def _(client, message):
         duration_value = int(duration[:-1]) if duration[:-1].isdigit() else 1
         total_days = duration_value
     else:
-        total_days = 30
+        total_days = 30  # default 1 bulan
 
-    # ✅ Batasi sesuai role (HARUS di dalam function)
-    if str(user.id) in reseller_id and total_days > 30:
-        return await message.reply("**⛔ Reseller hanya bisa memberikan maksimal 1 bulan (30 hari).**")
+    # Tentukan role prioritas: OWNER > ADMIN > RESELLER
+    if str(user.id) == str(OWNER_ID):
+        max_days = 3650  # 10 tahun
+    elif str(user.id) in admin_id:
+        max_days = 180  # 6 bulan
+    elif str(user.id) in reseller_id:
+        max_days = 30  # 1 bulan
+    else:
+        return await message.reply("⛔ Kamu tidak punya akses ke perintah ini.")
 
-    if str(user.id) in admin_id and total_days > 180:
-        return await message.reply("**⛔ Admin hanya bisa memberikan maksimal 6 bulan (180 hari).**")
-
-    if str(user.id) == str(OWNER_ID) and total_days > 3650:
-        return await message.reply("**⛔ Maksimal premium adalah 10 tahun (3650 hari).**")
+    if total_days > max_days:
+        return await message.reply(f"⛔ Maksimal kamu hanya bisa memberikan {max_days} hari.")
 
     msg = await message.reply("⏳ Memproses...")
 
@@ -617,7 +618,7 @@ async def _(client, message):
     except Exception as error:
         return await msg.edit(f"⛔ Error: {error}")
 
-    # ✅ Ambil expired target_user, bukan user
+    # Ambil expired target_user, bukan user
     dataexp = await get_expired_date(target_user.id)
     if not dataexp:
         expired = "⛔ Belum berlangganan"
@@ -635,15 +636,15 @@ async def _(client, message):
 
     try:
         now = datetime.now(timezone("Asia/Jakarta"))
-        expired = now + timedelta(days=total_days)
+        expired_date = now + timedelta(days=total_days)
 
-        await set_expired_date(target_user.id, expired)
+        await set_expired_date(target_user.id, expired_date)
         await add_to_vars(bot.me.id, "PREM_USERS", target_user.id)
 
         await msg.edit(f"""
 <blockquote>**__👤 Nama: <a href='tg://user?id={target_user.id}'>{target_user.first_name}</a>
 🆔 ID: <code>{target_user.id}</code>
-⏳ Expired: <code>{expired.strftime('%d-%m-%Y')}</code>
+⏳ Expired: <code>{expired_date.strftime('%d-%m-%Y')}</code>
 
 🔹 Silakan buka @{bot.me.username}
 📚 Penggunaan:
@@ -651,12 +652,13 @@ async def _(client, message):
 • Lalu Teken Tombol Buat Userbot, Dan Baca Langkah Langkahnya..__**</blockquote>
         """)
 
+        # Notifikasi ke owner
         return await bot.send_message(
             OWNER_ID,
             f"""
 <blockquote>**__👤 Seller/Admin: <a href='tg://user?id={message.from_user.id}'>{message.from_user.first_name}</a> (`{message.from_user.id}`)
 👤 Customer: <a href='tg://user?id={target_user.id}'>{target_user.first_name}</a> (`{target_user.id}`)
-⏳ Expired: <code>{expired.strftime('%d-%m-%Y')}</code>__**</blockquote>
+⏳ Expired: <code>{expired_date.strftime('%d-%m-%Y')}</code>__**</blockquote>
             """,
             reply_markup=InlineKeyboardMarkup(
                 [
