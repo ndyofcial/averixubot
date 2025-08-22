@@ -47,10 +47,17 @@ class MSG:
 """
 
     async def UBOT(count):
-        return f"""
+    if not ubot._ubot:  # kalau list kosong
+        return "<b>❌ Belum ada userbot yang aktif.</b>"
+
+    if int(count) < 0 or int(count) >= len(ubot._ubot):  # kalau index ga valid
+        return f"<b>❌ Index {count} tidak valid. Total userbot: {len(ubot._ubot)}</b>"
+
+    user = ubot._ubot[int(count)].me
+    return f"""
 <blockquote><b>⌬ ᴜsᴇʀʙᴏᴛ ᴋᴇ</b> <code>{int(count) + 1}/{len(ubot._ubot)}</code>
-<b> ├ ᴀᴋᴜɴ:</b> <a href=tg://user?id={ubot._ubot[int(count)].me.id}>{ubot._ubot[int(count)].me.first_name} {ubot._ubot[int(count)].me.last_name or ''}</a> 
-<b> ╰ ɪᴅ:</b> <code>{ubot._ubot[int(count)].me.id}</code></blockquote>
+<b> ├ ᴀᴋᴜɴ:</b> <a href=tg://user?id={user.id}>{user.first_name} {user.last_name or ''}</a> 
+<b> ╰ ɪᴅ:</b> <code>{user.id}</code></blockquote>
 """
 
     def POLICY():
