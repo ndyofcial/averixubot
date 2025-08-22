@@ -570,30 +570,30 @@ async def _(client, message):
 async def _(client, message):
     user = message.from_user
 
-    # Ambil list reseller dan admin, pastikan int
+    # Ambil semua role terbaru
     seller_id = [int(x) for x in await get_list_from_vars(bot.me.id, "SELER_USERS")]
     admin_id  = [int(x) for x in await get_list_from_vars(bot.me.id, "ADMIN_USERS")]
 
-    # Cek akses
-    if user.id != OWNER_ID and user.id not in seller_id and user.id not in admin_id:
+    # Cek akses sesuai prioritas role
+    if user.id != OWNER_ID and user.id not in admin_id and user.id not in seller_id:
         return await message.reply("❌ Kamu tidak punya akses untuk menggunakan perintah ini.")
 
-    # Ambil user_id dan duration
+    # Ambil user_id dan durasi
     reply = message.reply_to_message
     if reply:
-        user_id = reply.from_user.id
+        target_id = reply.from_user.id
         args = message.text.split(maxsplit=1)
         duration = args[1] if len(args) > 1 else "1b"
     else:
         args = message.text.split()[1:]
-        if len(args) == 0:
+        if not args:
             return await message.reply("""⛔ Cara penggunaan: `.prem user_id/username waktu`
 Contoh:
 - `.prem 161626262 1b` (1 bulan)
 - `.prem @username 15h` (15 hari)
 - Reply ke pesan user: `.prem 1b`
 """)
-        user_id = args[0]
+        target_id = args[0]
         duration = args[1] if len(args) > 1 else "1b"
 
     # Konversi durasi ke hari
@@ -604,13 +604,13 @@ Contoh:
     else:
         total_days = 30  # default 1 bulan
 
-    # Tentukan batas maksimal berdasarkan role
+    # Tentukan maksimal hari berdasarkan role
     if user.id == OWNER_ID:
-        max_days = 3650  # 10 tahun
+        max_days = 3650
     elif user.id in admin_id:
-        max_days = 180  # 6 bulan
+        max_days = 180
     elif user.id in seller_id:
-        max_days = 30   # 1 bulan
+        max_days = 30
     else:
         return await message.reply("⛔ Kamu tidak punya akses ke perintah ini.")
 
@@ -619,26 +619,26 @@ Contoh:
 
     msg = await message.reply("⏳ Memproses...")
 
-    # Ambil data user target
+    # Ambil data target user
     try:
-        target_user = await client.get_users(user_id)
-    except Exception as error:
-        return await msg.edit(f"⛔ Error: {error}")
+        target_user = await client.get_users(target_id)
+    except Exception as e:
+        return await msg.edit(f"❌ Error: {e}")
 
-    # Cek expired user
+    # Cek expired target
     dataexp = await get_expired_date(target_user.id)
     expired_str = dataexp.astimezone(timezone("Asia/Jakarta")).strftime("%d-%m-%Y %H:%M") if dataexp else "⛔ Belum berlangganan"
 
     prem_users = await get_list_from_vars(bot.me.id, "PREM_USERS")
     if target_user.id in prem_users:
         return await msg.edit(f"""
-**👤 Nama: {target_user.first_name}**
+**👤 Nama:** {target_user.first_name}
 🆔 ID: `{target_user.id}`
 📚 Keterangan: Sudah Premium
 ⏳ Masa Aktif: {expired_str}
 """)
 
-    # Set expired dan tambah ke PREM_USERS
+    # Set expired dan tambahkan ke PREM_USERS
     try:
         now = datetime.now(timezone("Asia/Jakarta"))
         expired_date = now + timedelta(days=total_days)
@@ -647,7 +647,7 @@ Contoh:
         await add_to_vars(bot.me.id, "PREM_USERS", target_user.id)
 
         await msg.edit(f"""
-**👤 Nama: {target_user.first_name}**
+**👤 Nama:** {target_user.first_name}
 🆔 ID: `{target_user.id}`
 ⏳ Expired: `{expired_date.strftime('%d-%m-%Y')}`
 🔹 Silakan buka @{bot.me.username} untuk menggunakan userbot
