@@ -1,9 +1,8 @@
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-
 from PyroUbot import OWNER_ID, bot, ubot, get_expired_date
 
 
-class MSG:     
+class MSG:
     def EXP_MSG_UBOT(X):
         return f"""
 <blockquote><b>⌬ ᴘᴇᴍʙᴇʀɪᴛᴀʜᴜᴀɴ</b>
@@ -31,14 +30,14 @@ class MSG:
         return f"""
 <blockquote><b>💬 sɪʟᴀʜᴋᴀɴ ᴍᴇʟᴀᴋᴜᴋᴀɴ ᴘᴇᴍʙᴀʏᴀʀᴀɴ ᴛᴇʀʟᴇʙɪʜ ᴅᴀʜᴜʟᴜ</b>
 
-<b>🎟️ ʜᴀʀɢᴀ ᴘᴇʀʙᴜʟᴀɴ: 10.000</b>
+<b>🎟️ ʜᴀʀɢᴀ ᴘᴇʀʙᴜʟᴀɴ: {harga}</b>
 
-<b>💳 ᴍᴏᴛᴏᴅᴇ ᴘᴇᴍʙᴀʏᴀʀᴀɴ:</b>
+<b>💳 ᴍᴇᴛᴏᴅᴇ ᴘᴇᴍʙᴀʏᴀʀᴀɴ:</b>
  <b>├ ʙᴀɴᴋ ᴊᴀɢᴏ : </b>
  <b>├ ᴅᴀɴᴀ :  </b>
  <b>├ ɢᴏᴘᴀʏ :  </b>
  <b>├ ǫʀɪs : TANYAKAN SAJA</b>
-<b>🔖 ᴛᴏᴛᴀʟ ʜᴀʀɢᴀ: ʀᴘ 10.000 ᴘᴇʀʙᴜʟᴀɴ</b> 
+<b>🔖 ᴛᴏᴛᴀʟ ʜᴀʀɢᴀ: ʀᴘ {total} / {bulan} ʙᴜʟᴀɴ</b> 
 
  🚀 ꜱɪʟᴀʜᴋᴀɴ ᴄʜᴀᴛ ᴏᴡɴᴇʀ ᴅɪ ʙᴀᴡᴀʜ ɪɴɪ ᴜɴᴛᴜᴋ ᴍᴇᴍʙᴇʟɪ ᴜꜱᴇʀʙᴏᴛ 
 • ᴏᴡɴᴇʀ : <a href=tg://openmessage?user_id={OWNER_ID}>ɴᴅʏᴏғғᴄ</a> 
@@ -46,15 +45,16 @@ class MSG:
 <b>✅ ᴋʟɪᴋ ᴛᴏᴍʙᴏʟ ᴋᴏɴꜰɪʀᴍᴀsɪ ᴜɴᴛᴜᴋ ᴋɪʀɪᴍ ʙᴜᴋᴛɪ ᴘᴇᴍʙᴀʏᴀʀᴀɴ ᴀɴᴅᴀ</b></blockquote>
 """
 
+    @staticmethod
     async def UBOT(count):
-    if not ubot._ubot:  # kalau list kosong
-        return "<b>❌ Belum ada userbot yang aktif.</b>"
+        if not ubot._ubot:  # kalau list kosong
+            return "<b>❌ Belum ada userbot yang aktif.</b>"
 
-    if int(count) < 0 or int(count) >= len(ubot._ubot):  # kalau index ga valid
-        return f"<b>❌ Index {count} tidak valid. Total userbot: {len(ubot._ubot)}</b>"
+        if int(count) < 0 or int(count) >= len(ubot._ubot):  # kalau index ga valid
+            return f"<b>❌ Index {count} tidak valid. Total userbot: {len(ubot._ubot)}</b>"
 
-    user = ubot._ubot[int(count)].me
-    return f"""
+        user = ubot._ubot[int(count)].me
+        return f"""
 <blockquote><b>⌬ ᴜsᴇʀʙᴏᴛ ᴋᴇ</b> <code>{int(count) + 1}/{len(ubot._ubot)}</code>
 <b> ├ ᴀᴋᴜɴ:</b> <a href=tg://user?id={user.id}>{user.first_name} {user.last_name or ''}</a> 
 <b> ╰ ɪᴅ:</b> <code>{user.id}</code></blockquote>
