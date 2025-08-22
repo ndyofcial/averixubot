@@ -570,41 +570,47 @@ async def _(client, message):
 async def _(client, message):
     user = message.from_user
 
-    reseller_id = await get_list_from_vars(bot.me.id, "SELER_USERS")
-    admin_id = await get_list_from_vars(bot.me.id, "ADMIN_USERS")
+    # Ambil list reseller dan admin, pastikan int
+    seller_id = [int(x) for x in await get_list_from_vars(bot.me.id, "SELER_USERS")]
+    admin_id  = [int(x) for x in await get_list_from_vars(bot.me.id, "ADMIN_USERS")]
+
+    # Cek akses
+    if user.id != OWNER_ID and user.id not in seller_id and user.id not in admin_id:
+        return await message.reply("❌ Kamu tidak punya akses untuk menggunakan perintah ini.")
 
     # Ambil user_id dan duration
     reply = message.reply_to_message
-    args = message.text.split(maxsplit=2)[1:] if not reply else [str(reply.from_user.id)] + message.text.split(maxsplit=1)[1:]
+    if reply:
+        user_id = reply.from_user.id
+        args = message.text.split(maxsplit=1)
+        duration = args[1] if len(args) > 1 else "1b"
+    else:
+        args = message.text.split()[1:]
+        if len(args) == 0:
+            return await message.reply("""⛔ Cara penggunaan: `.prem user_id/username waktu`
+Contoh:
+- `.prem 161626262 1b` (1 bulan)
+- `.prem @username 15h` (15 hari)
+- Reply ke pesan user: `.prem 1b`
+""")
+        user_id = args[0]
+        duration = args[1] if len(args) > 1 else "1b"
 
-    if not args:
-        return await message.reply(f"""
-<blockquote>**__⛔ Cara Penggunaan: <code>.prem username/userid waktu</code>
-
-‼️Contoh:
-- <code>.prem 161626262 1b</code> (1 bulan)
-- <code>.prem @username 15h</code> (15 hari)
-- <code>.prem 1b</code> (Gunakan reply ke user)__**</blockquote>""")
-
-    user_id, duration = args[0], args[1] if len(args) > 1 else "1b"
-
-    # Hitung total hari
+    # Konversi durasi ke hari
     if duration.endswith("b"):
-        duration_value = int(duration[:-1]) if duration[:-1].isdigit() else 1
-        total_days = duration_value * 30
+        total_days = int(duration[:-1]) * 30 if duration[:-1].isdigit() else 30
     elif duration.endswith("h"):
-        duration_value = int(duration[:-1]) if duration[:-1].isdigit() else 1
-        total_days = duration_value
+        total_days = int(duration[:-1]) if duration[:-1].isdigit() else 1
     else:
         total_days = 30  # default 1 bulan
 
-    # Tentukan role prioritas: OWNER > ADMIN > RESELLER
-    if str(user.id) == str(OWNER_ID):
+    # Tentukan batas maksimal berdasarkan role
+    if user.id == OWNER_ID:
         max_days = 3650  # 10 tahun
-    elif str(user.id) in admin_id:
+    elif user.id in admin_id:
         max_days = 180  # 6 bulan
-    elif str(user.id) in reseller_id:
-        max_days = 30  # 1 bulan
+    elif user.id in seller_id:
+        max_days = 30   # 1 bulan
     else:
         return await message.reply("⛔ Kamu tidak punya akses ke perintah ini.")
 
@@ -613,27 +619,26 @@ async def _(client, message):
 
     msg = await message.reply("⏳ Memproses...")
 
+    # Ambil data user target
     try:
         target_user = await client.get_users(user_id)
     except Exception as error:
         return await msg.edit(f"⛔ Error: {error}")
 
-    # Ambil expired target_user, bukan user
+    # Cek expired user
     dataexp = await get_expired_date(target_user.id)
-    if not dataexp:
-        expired = "⛔ Belum berlangganan"
-    else:
-        expired = dataexp.astimezone(timezone("Asia/Jakarta")).strftime("%d-%m-%Y %H:%M")
+    expired_str = dataexp.astimezone(timezone("Asia/Jakarta")).strftime("%d-%m-%Y %H:%M") if dataexp else "⛔ Belum berlangganan"
 
     prem_users = await get_list_from_vars(bot.me.id, "PREM_USERS")
     if target_user.id in prem_users:
         return await msg.edit(f"""
-<blockquote>**__👤 Nama: <a href='tg://user?id={target_user.id}'>{target_user.first_name}</a>
-🆔 ID: <code>{target_user.id}</code>
+**👤 Nama: {target_user.first_name}**
+🆔 ID: `{target_user.id}`
 📚 Keterangan: Sudah Premium
-⏳ Masa Aktif: {expired}__**</blockquote>
-        """)
+⏳ Masa Aktif: {expired_str}
+""")
 
+    # Set expired dan tambah ke PREM_USERS
     try:
         now = datetime.now(timezone("Asia/Jakarta"))
         expired_date = now + timedelta(days=total_days)
@@ -642,24 +647,20 @@ async def _(client, message):
         await add_to_vars(bot.me.id, "PREM_USERS", target_user.id)
 
         await msg.edit(f"""
-<blockquote>**__👤 Nama: <a href='tg://user?id={target_user.id}'>{target_user.first_name}</a>
-🆔 ID: <code>{target_user.id}</code>
-⏳ Expired: <code>{expired_date.strftime('%d-%m-%Y')}</code>
-
-🔹 Silakan buka @{bot.me.username}
-📚 Penggunaan:
-• Ketik /start 
-• Lalu Teken Tombol Buat Userbot, Dan Baca Langkah Langkahnya..__**</blockquote>
-        """)
+**👤 Nama: {target_user.first_name}**
+🆔 ID: `{target_user.id}`
+⏳ Expired: `{expired_date.strftime('%d-%m-%Y')}`
+🔹 Silakan buka @{bot.me.username} untuk menggunakan userbot
+""")
 
         # Notifikasi ke owner
-        return await bot.send_message(
+        await bot.send_message(
             OWNER_ID,
             f"""
-<blockquote>**__👤 Seller/Admin: <a href='tg://user?id={message.from_user.id}'>{message.from_user.first_name}</a> (`{message.from_user.id}`)
-👤 Customer: <a href='tg://user?id={target_user.id}'>{target_user.first_name}</a> (`{target_user.id}`)
-⏳ Expired: <code>{expired_date.strftime('%d-%m-%Y')}</code>__**</blockquote>
-            """,
+**👤 Seller/Admin:** {message.from_user.first_name} (`{message.from_user.id}`)
+**👤 Customer:** {target_user.first_name} (`{target_user.id}`)
+⏳ Expired: `{expired_date.strftime('%d-%m-%Y')}`
+""",
             reply_markup=InlineKeyboardMarkup(
                 [
                     [
@@ -669,5 +670,6 @@ async def _(client, message):
                 ]
             ),
         )
+
     except Exception as error:
-        return await msg.edit(f"<b>❌ Error:</b> {error}")
+        return await msg.edit(f"❌ Error: {error}")
