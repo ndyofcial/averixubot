@@ -11,32 +11,48 @@ __MODULE__ = "ᴅʙ ᴄᴏɴᴛʀᴏʟ"
 __HELP__ = """
 <b>⦪ ʙᴀɴᴛᴜᴀɴ ᴜɴᴛᴜᴋ ᴅʙ ᴄᴏɴᴛʀᴏʟ ⦫</b>
 
-<blockquote expandable>
-⎆ perintah :
-ᚗ <code>{0}prem</code> 1b
-ᚗ <code>{0}unprem</code>
-ᚗ <code>{0}getprem</code>
-
-⎆ Cara Penggunaan:
-• <code>.prem 161626262 1b</code> (1 bulan)
-• <code>.prem @username 15h</code> (15 hari)
-• Reply ke user: <code>.prem 1b</code>
-
-ᚗ <code>{0}addadmin</code>
-ᚗ <code>{0}unadmin</code>
-ᚗ <code>{0}getadmin</code>
-
-ᚗ <code>{0}seles</code>
-ᚗ <code>{0}unseles</code>
-ᚗ <code>{0}getseles</code>
+<blockquote expandable>⎆ <code>{0}prem</code>  
+⊶ Tambah user jadi premium.
 </blockquote>
 
-<blockquote expandable>
-ᚗ <code>{0}time</code> id hari  
-⊶ Untuk Menambah/Mengurangi Masa Aktif User  
+<blockquote expandable>⎆ <code>{0}unprem</code>  
+⊶ Hapus status premium user.
+</blockquote>
 
-ᚗ <code>{0}cek</code> id  
-⊶ Untuk Melihat Masa Aktif User
+<blockquote expandable>⎆ <code>{0}getprem</code>  
+⊶ Lihat daftar user premium.
+</blockquote>
+
+<blockquote expandable>⎆ <code>{0}addadmin</code>  
+⊶ Tambah admin bot.
+</blockquote>
+
+<blockquote expandable>⎆ <code>{0}unadmin</code>  
+⊶ Hapus admin bot.
+</blockquote>
+
+<blockquote expandable>⎆ <code>{0}getadmin</code>  
+⊶ Lihat daftar admin.
+</blockquote>
+
+<blockquote expandable>⎆ <code>{0}seles</code>  
+⊶ Tambah seller bot.
+</blockquote>
+
+<blockquote expandable>⎆ <code>{0}unseles</code>  
+⊶ Hapus seller bot.
+</blockquote>
+
+<blockquote expandable>⎆ <code>{0}getseles</code>  
+⊶ Lihat daftar seller.
+</blockquote>
+
+<blockquote expandable>⎆ <code>{0}time</code> id hari  
+⊶ Tambah/Kurangi masa aktif user.
+</blockquote>
+
+<blockquote expandable>⎆ <code>{0}cek</code> id  
+⊶ Lihat masa aktif user.
 </blockquote>
 """
 
@@ -91,12 +107,6 @@ async def _(client, message):
 <b>⎆ ɪᴅ: {user.id}</b>
 <b>⎆ ᴇxᴘɪʀᴇᴅ: {get_bulan} ʙᴜʟᴀɴ</b>
 <b>⎆ ꜱɪʟᴀʜᴋᴀɴ ʙᴜᴋᴀ @{client.me.username} ᴜɴᴛᴜᴋ ᴍᴇᴍʙᴜᴀᴛ ᴜꜱᴇʀʙᴏᴛ</b></blockquote>
-
-<blockquote>⎆ sɪʟᴀʜᴋᴀɴ ʙᴜᴀᴛ ᴜsᴇʀʙᴏᴛ :
-ᚗ /start ʙᴏᴛ @usnbot
-ᚗ ᴋᴀʟᴀᴜ sᴜᴅᴀʜ sᴛᴀʀᴛ ʙᴏᴛ sɪʟᴀʜᴋᴀɴ ᴘᴇɴᴄᴇᴛ ᴛᴏᴍʙᴏʟ ʙᴜᴀᴛ ᴜsᴇʀʙᴏᴛ 
-ᚗ ɴᴀʜ ɴᴀɴᴛɪ ᴀᴅᴀ ᴀʀᴀʜᴀɴ ᴅᴀʀɪ ʙᴏᴛ ɴʏᴀ</blockquote>
-<blockquote><b>⎆ ɴᴏᴛᴇ : ᴊᴀɴɢᴀɴ ʟᴜᴘᴀ ʙᴀᴄᴀ ᴀʀᴀʜᴀɴ ᴅᴀʀɪ ʙᴏᴛ ɴʏᴀ</b></blockquote>
 """
         )
         return await bot.send_message(
@@ -507,63 +517,87 @@ async def _(client, message):
         return await Sh.edit("tidak dapat mengambil daftar admin")
 
 @PY.BOT("superultra")
-@PY.OWNER
 async def _(client, message):
-    user_id, get_bulan = await extract_user_and_reason(message)
-    msg = await message.reply("memproses...")
-    if not user_id:
-        return await msg.edit(f"{message.text} user_id/username")
+    user = message.from_user
+
+    # Hanya OWNER_ID yang bisa akses
+    if user.id != OWNER_ID:
+        return
+
+    reply = message.reply_to_message
+    args = message.text.split()[1:]
+
+    # Tentukan target_id & durasi
+    if reply:
+        target_id = reply.from_user.id
+        duration = args[0] if args else "1b"
+    else:
+        if not args:
+            return await message.reply("""⛔ Cara penggunaan: `/superultra user_id/username waktu`
+Contoh:
+- `/superultra 1234567890 1b`
+- `/superultra @username 2b`
+- Reply ke pesan user: `/superultra 1b`
+""")
+        target_id = args[0]
+        duration = args[1] if len(args) > 1 else "1b"
+
+    # Konversi bulan ke expired date
+    if duration.endswith("b") and duration[:-1].isdigit():
+        months = int(duration[:-1])
+    else:
+        months = 1  # default 1 bulan
+
+    msg = await message.reply("⏳ Memproses...")
 
     try:
-        user = await client.get_users(user_id)
-    except Exception as error:
-        return await msg.edit(error)
-    if not get_bulan:
-        get_bulan = 1
+        target_user = await client.get_users(target_id)
+    except Exception as e:
+        return await msg.edit(f"❌ Error: {e}")
 
-    prem_users = await get_list_from_vars(client.me.id, "ULTRA_PREM")
+    superultra_users = await get_list_from_vars(bot.me.id, "ULTRA_PREM")
 
-    if user.id in prem_users:
+    if target_user.id in superultra_users:
         return await msg.edit(f"""
-<b>name:</b> [{user.first_name} {user.last_name or ''}](tg://user?id={user.id})
-<b>id:</b> {user.id}
-<b>keterangan: sudah</b> <code>[SuperUltra]</code>
-<b>expired:</b> <code>{get_bulan}</code> <b>bulan</b>
-"""
-        )
+**👤 Nama:** {target_user.first_name}
+🆔 ID: `{target_user.id}`
+📚 Keterangan: Sudah SuperUltra
+""")
 
     try:
         now = datetime.now(timezone("Asia/Jakarta"))
-        expired = now + relativedelta(months=int(get_bulan))
-        await set_expired_date(user_id, expired)
-        await add_to_vars(client.me.id, "ULTRA_PREM", user.id)
+        expired_date = now + relativedelta(months=months)
+
+        await set_expired_date(target_user.id, expired_date)
+        await add_to_vars(bot.me.id, "ULTRA_PREM", target_user.id)
+
         await msg.edit(f"""
-<b>name:</b> [{user.first_name} {user.last_name or ''}](tg://user?id={user.id})
-<b>id:</b> <code>{user.id}</code>
-<b>expired:</b> <code>{get_bulan}</code> <b>bulan</b>
-<b>ꜱilahkan buka</b> @{client.me.mention} <b>untuk membuat uꜱerbot</b>
-<b>status : </b><code>[SuperUltra]</code>
-"""
-        )
-        return await bot.send_message(
+**👤 Nama:** {target_user.first_name}
+🆔 ID: `{target_user.id}`
+⏳ Expired: `{expired_date.strftime('%d-%m-%Y')}`
+🔹 Berhasil dijadikan SuperUltra
+""")
+
+        # Notif ke Owner
+        await bot.send_message(
             OWNER_ID,
-            f"🆔 id-seller: {message.from_user.id}\n\n🆔 id-customer: {user_id}",
+            f"""
+**👤 Owner:** {message.from_user.first_name} (`{message.from_user.id}`)
+**👤 Customer SuperUltra:** {target_user.first_name} (`{target_user.id}`)
+⏳ Expired: `{expired_date.strftime('%d-%m-%Y')}`
+""",
             reply_markup=InlineKeyboardMarkup(
                 [
                     [
-                        InlineKeyboardButton(
-                            "🔱 seller",
-                            callback_data=f"profil {message.from_user.id}",
-                        ),
-                        InlineKeyboardButton(
-                            "customer ⚜️", callback_data=f"profil {user_id}"
-                        ),
+                        InlineKeyboardButton("👑 Owner", callback_data=f"profil {message.from_user.id}"),
+                        InlineKeyboardButton("Customer 👤", callback_data=f"profil {target_user.id}"),
                     ],
                 ]
             ),
         )
+
     except Exception as error:
-        return await msg.edit(error)
+        return await msg.edit(f"❌ Error: {error}")
 
 
 @PY.BOT("rmultra")
@@ -638,7 +672,7 @@ async def _(client, message):
 
     # Cek akses sesuai prioritas role
     if user.id != OWNER_ID and user.id not in admin_id and user.id not in seller_id:
-        return await message.reply("❌ Kamu tidak punya akses untuk menggunakan perintah ini.")
+        return
 
     # Ambil user_id dan durasi
     reply = message.reply_to_message
@@ -651,7 +685,7 @@ async def _(client, message):
         if not args:
             return await message.reply("""⛔ Cara penggunaan: `.prem user_id/username waktu`
 Contoh:
-- `.prem 161626262 1b` (1 bulan)
+- `.prem 1234567890 1b` (1 bulan)
 - `.prem @username 15h` (15 hari)
 - Reply ke pesan user: `.prem 1b`
 """)
