@@ -11,47 +11,47 @@ __MODULE__ = "ᴅʙ ᴄᴏɴᴛʀᴏʟ"
 __HELP__ = """
 <b>⦪ ʙᴀɴᴛᴜᴀɴ ᴜɴᴛᴜᴋ ᴅʙ ᴄᴏɴᴛʀᴏʟ ⦫</b>
 
-<blockquote expandable>⎆ <code>{0}prem</code>  
+<blockquote>⎆ <code>{0}prem</code>  
 ⊶ Tambah user jadi premium.
 </blockquote>
 
-<blockquote expandable>⎆ <code>{0}unprem</code>  
+<blockquote>⎆ <code>{0}unprem</code>  
 ⊶ Hapus status premium user.
 </blockquote>
 
-<blockquote expandable>⎆ <code>{0}getprem</code>  
+<blockquote>⎆ <code>{0}getprem</code>  
 ⊶ Lihat daftar user premium.
 </blockquote>
 
-<blockquote expandable>⎆ <code>{0}addadmin</code>  
+<blockquote>⎆ <code>{0}addadmin</code>  
 ⊶ Tambah admin bot.
 </blockquote>
 
-<blockquote expandable>⎆ <code>{0}unadmin</code>  
+<blockquote>⎆ <code>{0}unadmin</code>  
 ⊶ Hapus admin bot.
 </blockquote>
 
-<blockquote expandable>⎆ <code>{0}getadmin</code>  
+<blockquote>⎆ <code>{0}getadmin</code>  
 ⊶ Lihat daftar admin.
 </blockquote>
 
-<blockquote expandable>⎆ <code>{0}seles</code>  
+<blockquote>⎆ <code>{0}seles</code>  
 ⊶ Tambah seller bot.
 </blockquote>
 
-<blockquote expandable>⎆ <code>{0}unseles</code>  
+<blockquote>⎆ <code>{0}unseles</code>  
 ⊶ Hapus seller bot.
 </blockquote>
 
-<blockquote expandable>⎆ <code>{0}getseles</code>  
+<blockquote>⎆ <code>{0}getseles</code>  
 ⊶ Lihat daftar seller.
 </blockquote>
 
-<blockquote expandable>⎆ <code>{0}time</code> id hari  
+<blockquote>⎆ <code>{0}time</code> id hari  
 ⊶ Tambah/Kurangi masa aktif user.
 </blockquote>
 
-<blockquote expandable>⎆ <code>{0}cek</code> id  
+<blockquote>⎆ <code>{0}cek</code> id  
 ⊶ Lihat masa aktif user.
 </blockquote>
 """
@@ -66,7 +66,7 @@ async def _(client, message):
     admin_users = await get_list_from_vars(client.me.id, "ADMIN_USERS")
     superultra_users = await get_list_from_vars(client.me.id, "ULTRA_PREM")
 
-    # kalau bukan seller, bukan admin, bukan superultra → stop (tanpa respon)
+    # kalau bukan seller, bukan admin, bukan superultra, bukan owner → stop
     if (
         message.from_user.id not in seles_users
         and message.from_user.id not in admin_users
@@ -88,27 +88,39 @@ async def _(client, message):
 
     prem_users = await get_list_from_vars(client.me.id, "PREM_USERS")
 
+    # kalau user sudah ada prem
     if user.id in prem_users:
         return await msg.edit(f"""
 <blockquote><b>⎆ ɴᴀᴍᴇ: [{user.first_name} {user.last_name or ''}](tg://user?id={user.id})</b>
 <b>⎆ ɪᴅ: {user.id}</b>
-<b>⎆ ᴋᴇᴛᴇʀᴀɴɢᴀɴ: ꜱᴜᴅᴀʜ ᴘʀᴇᴍɪᴜᴍ</b>
-<b>⎆ ᴇxᴘɪʀᴇᴅ: {get_bulan} ʙᴜʟᴀɴ</b></blockquote>
+<b>⎆ ᴋᴇᴛᴇʀᴀɴɢᴀɴ: ꜱᴜᴅᴀʜ ᴘʀᴇᴍɪᴜᴍ</b></blockquote>
 """
         )
 
     try:
         now = datetime.now(timezone("Asia/Jakarta"))
-        expired = now + relativedelta(months=int(get_bulan))
+
+        # cek apakah eksekutor superultra
+        if message.from_user.id in superultra_users:
+            su_expired = await get_expired_date(message.from_user.id)
+            if not su_expired or su_expired < now:
+                return await msg.edit("⛔ SuperUltra kamu sudah expired!")
+
+            expired = su_expired  # expired ikut superultra
+        else:
+            expired = now + relativedelta(months=int(get_bulan))
+
         await set_expired_date(user_id, expired)
         await add_to_vars(client.me.id, "PREM_USERS", user.id)
+
         await msg.edit(f"""
 <blockquote><b>⎆ ɴᴀᴍᴇ: [{user.first_name} {user.last_name or ''}](tg://user?id={user.id})</b>
 <b>⎆ ɪᴅ: {user.id}</b>
-<b>⎆ ᴇxᴘɪʀᴇᴅ: {get_bulan} ʙᴜʟᴀɴ</b>
+<b>⎆ ᴇxᴘɪʀᴇᴅ: {expired.strftime('%d-%m-%Y')}</b>
 <b>⎆ ꜱɪʟᴀʜᴋᴀɴ ʙᴜᴋᴀ @{client.me.username} ᴜɴᴛᴜᴋ ᴍᴇᴍʙᴜᴀᴛ ᴜꜱᴇʀʙᴏᴛ</b></blockquote>
 """
         )
+
         return await bot.send_message(
             OWNER_ID,
             f"🆔 id-seller: {message.from_user.id}\n\n🆔 id-customer: {user_id}",
@@ -211,7 +223,7 @@ async def _(client, message):
     superultra_users = await get_list_from_vars(client.me.id, "ULTRA_PREM")
     admin_users = await get_list_from_vars(client.me.id, "ADMIN_USERS")
 
-    # kalau bukan OWNER, bukan admin, bukan superultra → langsung stop (tanpa respon)
+    # kalau bukan OWNER, bukan admin, bukan superultra → stop
     if (
         message.from_user.id != OWNER_ID
         and message.from_user.id not in superultra_users
@@ -219,9 +231,9 @@ async def _(client, message):
     ):
         return
 
-    user_id = await extract_user(message)
+    user_id, get_bulan = await extract_user_and_reason(message)
     if not user_id:
-        return await msg.edit(f"<b>{message.text} user_id/username</b>")
+        return await msg.edit(f"<b>{message.text} user_id/username - bulan</b>")
 
     try:
         user = await client.get_users(user_id)
@@ -232,20 +244,39 @@ async def _(client, message):
 
     if user.id in seles_users:
         return await msg.edit(f"""
- ɪɴғᴏʀᴍᴀᴛɪᴏɴ :
- <blockquote><b>⎆ name: [{user.first_name} {user.last_name or ''}](tg://user?id={user.id})</b>
- <b>⎆ id: {user.id}</b>
- <b>⎆ keterangan: sudah seller</b></blockquote>
+ɪɴғᴏʀᴍᴀᴛɪᴏɴ :
+<blockquote><b>⎆ name: [{user.first_name} {user.last_name or ''}](tg://user?id={user.id})</b>
+<b>⎆ id: {user.id}</b>
+<b>⎆ keterangan: sudah seller</b></blockquote>
 """
         )
 
     try:
+        now = datetime.now(timezone("Asia/Jakarta"))
+
+        # default kalau input bulan kosong
+        if not get_bulan:
+            get_bulan = 1
+
+        # cek apakah eksekutor superultra
+        if message.from_user.id in superultra_users:
+            su_expired = await get_expired_date(message.from_user.id)
+            if not su_expired or su_expired < now:
+                return await msg.edit("⛔ SuperUltra kamu sudah expired!")
+
+            expired = su_expired  # expired ikut superultra
+        else:
+            expired = now + relativedelta(months=int(get_bulan))
+
+        await set_expired_date(user.id, expired)
         await add_to_vars(client.me.id, "SELER_USERS", user.id)
+
         return await msg.edit(f"""
- ɪɴғᴏʀᴍᴀᴛɪᴏɴ :
- <blockquote><b>⎆ name: [{user.first_name} {user.last_name or ''}](tg://user?id={user.id})</b>
- <b>⎆ id: {user.id}</b>
- <b>⎆ keterangan: seller</b></blockquote>
+ɪɴғᴏʀᴍᴀᴛɪᴏɴ :
+<blockquote><b>⎆ name: [{user.first_name} {user.last_name or ''}](tg://user?id={user.id})</b>
+<b>⎆ id: {user.id}</b>
+<b>⎆ expired: {expired.strftime('%d-%m-%Y')}</b>
+<b>⎆ keterangan: seller berhasil ditambahkan</b></blockquote>
 """
         )
     except Exception as error:
@@ -401,46 +432,94 @@ async def _(client, message):
 
 @PY.BOT("addadmin")
 async def _(client, message):
-    msg = await message.reply("sedang memproses...")
+    user = message.from_user
 
-    # ambil list superultra
+    # OWNER dan SuperUltra aja yg bisa akses
     superultra_users = await get_list_from_vars(client.me.id, "ULTRA_PREM")
+    if user.id != OWNER_ID and user.id not in superultra_users:
+        return
 
-    # kalau bukan OWNER & bukan superultra → tolak
-    if message.from_user.id != OWNER_ID and message.from_user.id not in superultra_users:
-        return 
+    reply = message.reply_to_message
+    args = message.text.split()[1:]
 
-    user_id = await extract_user(message)
-    if not user_id:
-        return await msg.edit(f"{message.text} user_id/username")
+    # Tentukan target_id & durasi
+    if reply:
+        target_id = reply.from_user.id
+        duration = args[0] if args else "1b"
+    else:
+        if not args:
+            return await message.reply("""⛔ Cara penggunaan: `/addadmin user_id/username waktu`
+Contoh:
+- `/addadmin 1234567890 1b`
+- `/addadmin @username 2b`
+- Reply ke pesan user: `/addadmin 1b`
+""")
+        target_id = args[0]
+        duration = args[1] if len(args) > 1 else "1b"
+
+    # Konversi durasi ke bulan
+    if duration.endswith("b") and duration[:-1].isdigit():
+        months = int(duration[:-1])
+    else:
+        months = 1  # default 1 bulan
+
+    msg = await message.reply("⏳ Memproses...")
 
     try:
-        user = await client.get_users(user_id)
-    except Exception as error:
-        return await msg.edit(error)
+        target_user = await client.get_users(target_id)
+    except Exception as e:
+        return await msg.edit(f"❌ Error: {e}")
 
     admin_users = await get_list_from_vars(client.me.id, "ADMIN_USERS")
 
-    if user.id in admin_users:
+    if target_user.id in admin_users:
         return await msg.edit(f"""
-⎆ INFORMATION
-⎆ name: [{user.first_name} {user.last_name or ''}](tg://user?id={user.id})
-⎆ id: {user.id}
-⎆ keterangan: sudah dalam daftar
-"""
-        )
+**👤 Nama:** {target_user.first_name}
+🆔 ID: `{target_user.id}`
+📚 Keterangan: Sudah admin
+""")
 
     try:
-        await add_to_vars(client.me.id, "ADMIN_USERS", user.id)
-        return await msg.edit(f"""
-⎆ INFORMATION
-⎆ name: [{user.first_name} {user.last_name or ''}](tg://user?id={user.id})
-⎆ id: {user.id}
-⎆ keterangan: admin
-"""
+        now = datetime.now(timezone("Asia/Jakarta"))
+
+        # Kalau yg nambah SuperUltra → expired ikut SU
+        if user.id in superultra_users:
+            su_expired = await get_expired_date(user.id)
+            if not su_expired or su_expired < now:
+                return await msg.edit("⛔ SuperUltra kamu sudah expired!")
+            expired_date = su_expired
+        else:
+            expired_date = now + relativedelta(months=months)
+
+        await set_expired_date(target_user.id, expired_date)
+        await add_to_vars(client.me.id, "ADMIN_USERS", target_user.id)
+
+        await msg.edit(f"""
+**👤 Nama:** {target_user.first_name}
+🆔 ID: `{target_user.id}`
+⏳ Expired: `{expired_date.strftime('%d-%m-%Y')}`
+🔹 Berhasil dijadikan Admin
+""")
+        # Notif ke Owner
+        await client.send_message(
+            OWNER_ID,
+            f"""
+**👤 Owner:** {message.from_user.first_name} (`{message.from_user.id}`)
+**👤 Customer Addadmin:** {target_user.first_name} (`{target_user.id}`)
+⏳ Expired: `{expired_date.strftime('%d-%m-%Y')}`
+""",
+            reply_markup=InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton("👑 Owner", callback_data=f"profil {message.from_user.id}"),
+                        InlineKeyboardButton("Customer 👤", callback_data=f"profil {target_user.id}"),
+                    ],
+                ]
+            ),
         )
+
     except Exception as error:
-        return await msg.edit(error)
+        return await msg.edit(f"❌ Error: {error}")
 
 
 @PY.BOT("unadmin")
@@ -515,6 +594,7 @@ async def _(client, message):
         return await Sh.edit(response)
     else:
         return await Sh.edit("tidak dapat mengambil daftar admin")
+
 
 @PY.BOT("superultra")
 async def _(client, message):
@@ -600,7 +680,7 @@ Contoh:
         return await msg.edit(f"❌ Error: {error}")
 
 
-@PY.BOT("rmultra")
+@PY.BOT("unsuperultra")
 @PY.OWNER
 async def _(client, message):
     msg = await message.reply("sedang memproses...")
@@ -630,7 +710,7 @@ async def _(client, message):
         return await msg.edit(f"""
 <b>name:</b> [{user.first_name} {user.last_name or ''}](tg://user?id={user.id})
 <b>id:</b> <code>{user.id}</code>
-<b>keterangan: none superultra</b>
+<b>keterangan: berhasil dihapus dari superultra</b>
 """
         )
     except Exception as error:
