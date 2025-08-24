@@ -646,10 +646,13 @@ Contoh:
     superultra_users = await get_list_from_vars(bot.me.id, "ULTRA_PREM")
 
     if target_user.id in superultra_users:
+        expired = await get_expired_date(target_user.id)
+        expired_str = expired.strftime("%d-%m-%Y") if expired else "∞"
         return await msg.edit(f"""
 **👤 Nama:** {target_user.first_name}
 🆔 ID: `{target_user.id}`
 📚 Keterangan: Sudah SuperUltra
+⏳ Expired: `{expired_str}`
 """)
 
     try:
@@ -729,25 +732,35 @@ async def _(client, message):
 @PY.OWNER
 async def _(client, message):
     prem = await get_list_from_vars(bot.me.id, "ULTRA_PREM")
+    if not prem:
+        return
+
     prem_users = []
+    now = datetime.now(timezone("Asia/Jakarta"))
 
     for user_id in prem:
         try:
-            user = await client.get_users(user_id)
+            user = await client.get_users(int(user_id))
+            expired = await get_expired_date(user.id)
+            if expired:
+                expired_str = expired.strftime("%d-%m-%Y")
+                status = "✅ Aktif" if expired >= now else "❌ Expired"
+            else:
+                expired_str = "∞"
+                status = "∞"
             prem_users.append(
-                f"👤 [{user.first_name} {user.last_name or ''}](tg://user?id={user.id}) | {user.id}"
+                f"👤 [{user.first_name}](tg://user?id={user.id}) | {user.id} | ⏳ {expired_str} ({status})"
             )
-        except Exception as error:
-            return await message.reply(str(error))
+        except:
+            continue
 
-    total_prem_users = len(prem_users)
     if prem_users:
         prem_list_text = "\n".join(prem_users)
         return await message.reply(
-            f"📋 Daftar SuperUltra:\n\n{prem_list_text}\n\n⚜️ Total SuperUltra User: {total_prem_users}"
+            f"📋 **Daftar SuperUltra:**\n\n{prem_list_text}\n\n⚜️ Total SuperUltra User: {len(prem_users)}"
         )
     else:
-        return await message.reply("🚫 Tidak ada pengguna SuperUltra saat ini")
+        return await message.reply("🚫 Tidak ada pengguna SuperUltra yang valid")
 
 
 @PY.UBOT("prem")
