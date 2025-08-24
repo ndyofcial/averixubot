@@ -69,7 +69,7 @@ async def _(client, message):
     # Gabungkan semua role
     allowed_users = set(seles_users + admin_users + superultra_users + [OWNER_ID])
 
-    if message.from_user.id not in allowed_users:
+    if user.id not in allowed_users:
         return
 
     # Ambil target & durasi
@@ -138,20 +138,23 @@ Contoh:
             expired_str = "♾️ PERMANEN"
         else:
             dataexp = await get_expired_date(target_user.id)
-            if dataexp:
-                if dataexp.tzinfo is None:
-                    dataexp = tz.localize(dataexp)
+            if dataexp and dataexp.tzinfo is None:
+                dataexp = tz.localize(dataexp)
+
             if dataexp and dataexp > now:
                 expired_date = dataexp + timedelta(days=total_days)
             else:
                 expired_date = now + timedelta(days=total_days)
+
             expired_str = expired_date.strftime("%d-%m-%Y %H:%M")
 
         # Simpan expired baru
         await set_expired_date(target_user.id, expired_date)
 
-        # Tambah ke list PREM_USERS
-        await add_to_vars(bot.me.id, "PREM_USERS", target_user.id)
+        # Cegah duplikat PREM_USERS
+        prem_users = await get_list_from_vars(bot.me.id, "PREM_USERS")
+        if str(target_user.id) not in prem_users:
+            await add_to_vars(bot.me.id, "PREM_USERS", target_user.id)
 
         await msg.edit(f"""
 **👤 Nama:** {target_user.first_name}
@@ -241,7 +244,13 @@ async def _(client, message):
     batch = []
     tz = timezone("Asia/Jakarta")
 
+    # Hilangkan duplikat user
+    seen = set()
     for user_id in prem_users:
+        if user_id in seen:
+            continue
+        seen.add(user_id)
+
         try:
             user = await client.get_users(int(user_id))
             expired = await get_expired_date(user.id)
