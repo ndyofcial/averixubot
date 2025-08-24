@@ -23,18 +23,6 @@ __HELP__ = """
 ⊶ Lihat daftar user premium.
 </blockquote>
 
-<blockquote>⎆ <code>{0}addadmin</code>  
-⊶ Tambah admin bot.
-</blockquote>
-
-<blockquote>⎆ <code>{0}unadmin</code>  
-⊶ Hapus admin bot.
-</blockquote>
-
-<blockquote>⎆ <code>{0}getadmin</code>  
-⊶ Lihat daftar admin.
-</blockquote>
-
 <blockquote>⎆ <code>{0}seles</code>  
 ⊶ Tambah seller bot.
 </blockquote>
@@ -47,6 +35,18 @@ __HELP__ = """
 ⊶ Lihat daftar seller.
 </blockquote>
 
+<blockquote>⎆ <code>{0}addadmin</code>  
+⊶ Tambah admin bot.
+</blockquote>
+
+<blockquote>⎆ <code>{0}unadmin</code>  
+⊶ Hapus admin bot.
+</blockquote>
+
+<blockquote>⎆ <code>{0}getadmin</code>  
+⊶ Lihat daftar admin.
+</blockquote>
+
 <blockquote>⎆ <code>{0}time</code> id hari  
 ⊶ Tambah/Kurangi masa aktif user.
 </blockquote>
@@ -55,6 +55,7 @@ __HELP__ = """
 ⊶ Lihat masa aktif user.
 </blockquote>
 """
+
 
 @PY.BOT("prem")
 async def _(client, message):
@@ -68,7 +69,7 @@ async def _(client, message):
     # Gabungkan semua role
     allowed_users = set(seles_users + admin_users + superultra_users + [OWNER_ID])
 
-    if user.id not in allowed_users:
+    if message.from_user.id not in allowed_users:
         return
 
     # Ambil target & durasi
@@ -98,32 +99,28 @@ Contoh:
             return await message.reply("⛔ Hanya OWNER yang bisa memberikan premium permanen.")
         total_days = None  # permanen
     else:
-        # Konversi durasi
-        if duration.endswith("b") and duration[:-1].isdigit():
-            add_months = int(duration[:-1])
-            add_days = None
-        elif duration.endswith("h") and duration[:-1].isdigit():
-            add_days = int(duration[:-1])
-            add_months = None
+        # Konversi ke hari
+        if duration.endswith("b"):  # bulan
+            total_days = int(duration[:-1]) * 30 if duration[:-1].isdigit() else 30
+        elif duration.endswith("h"):  # hari
+            total_days = int(duration[:-1]) if duration[:-1].isdigit() else 1
         else:
-            add_months, add_days = 1, None  # default 1 bulan
+            total_days = 30
 
-        # Tentukan maksimal berdasarkan role
+        # Tentukan maksimal hari berdasarkan role
         if user.id == OWNER_ID:
-            max_months, max_days = 120, 3650
+            max_days = 3650
         elif user.id in admin_users:
-            max_months, max_days = 6, 180
+            max_days = 180
         elif user.id in seles_users:
-            max_months, max_days = 3, 90
+            max_days = 90
         elif user.id in superultra_users:
-            max_months, max_days = 12, 365
+            max_days = 365
         else:
             return await message.reply("⛔ Kamu tidak punya akses ke perintah ini.")
 
-        if add_months and add_months > max_months:
-            return await message.reply(f"⛔ Maksimal {max_months} bulan.")
-        if add_days and add_days > max_days:
-            return await message.reply(f"⛔ Maksimal {max_days} hari.")
+        if total_days > max_days:
+            return await message.reply(f"⛔ Maksimal kamu hanya bisa memberikan {max_days} hari.")
 
     msg = await message.reply("⏳ Memproses...")
 
@@ -133,44 +130,39 @@ Contoh:
         return await msg.edit(f"❌ Error: {e}")
 
     try:
-        now = datetime.now(timezone("Asia/Jakarta"))
-        dataexp = await get_expired_date(target_user.id)
+        tz = timezone("Asia/Jakarta")
+        now = datetime.now(tz)
 
         if is_permanent:
             expired_date = None
             expired_str = "♾️ PERMANEN"
         else:
-            # jika user sudah punya premium aktif → extend dari expired
+            dataexp = await get_expired_date(target_user.id)
+            if dataexp:
+                if dataexp.tzinfo is None:
+                    dataexp = tz.localize(dataexp)
             if dataexp and dataexp > now:
-                base_date = dataexp
+                expired_date = dataexp + timedelta(days=total_days)
             else:
-                base_date = now
-
-            if add_months:
-                expired_date = base_date + relativedelta(months=add_months)
-            elif add_days:
-                expired_date = base_date + timedelta(days=add_days)
-            else:
-                expired_date = base_date + relativedelta(months=1)
-
+                expired_date = now + timedelta(days=total_days)
             expired_str = expired_date.strftime("%d-%m-%Y %H:%M")
 
         # Simpan expired baru
         await set_expired_date(target_user.id, expired_date)
 
         # Tambah ke list PREM_USERS
-        await add_to_vars(client.me.id, "PREM_USERS", target_user.id)
+        await add_to_vars(bot.me.id, "PREM_USERS", target_user.id)
 
         await msg.edit(f"""
 **👤 Nama:** {target_user.first_name}
 🆔 ID: `{target_user.id}`
 📚 Keterangan: Premium Aktif
 ⏳ Masa Aktif: {expired_str}
-🔹 Silakan buka @{client.me.username} untuk menggunakan userbot
+🔹 Silakan buka @{bot.me.username} untuk menggunakan userbot
 """)
 
         # Notif owner
-        await client.send_message(
+        await bot.send_message(
             OWNER_ID,
             f"""
 **👤 Seller/Admin:** {message.from_user.first_name} (`{message.from_user.id}`)
@@ -247,6 +239,7 @@ async def _(client, message):
     text = "<b>👑 Daftar Pengguna Premium:</b>\n\n"
     count = 0
     batch = []
+    tz = timezone("Asia/Jakarta")
 
     for user_id in prem_users:
         try:
@@ -254,11 +247,14 @@ async def _(client, message):
             expired = await get_expired_date(user.id)
 
             if expired:
-                expired_str = expired.astimezone(timezone("Asia/Jakarta")).strftime("%d-%m-%Y %H:%M")
+                if expired.tzinfo is None:
+                    expired = tz.localize(expired)
+                expired_str = expired.astimezone(tz).strftime("%d-%m-%Y %H:%M")
             else:
                 expired_str = "♾️ PERMANEN"
 
             count += 1
+
             user_info = (
                 f"• <b>{count}.</b> <a href='tg://user?id={user.id}'>"
                 f"{user.first_name} {user.last_name or ''}</a>\n"
@@ -282,6 +278,7 @@ async def _(client, message):
     # kirim batch satu-satu
     for idx, part in enumerate(batch):
         if idx == 0:
+            # tambahin total di batch pertama
             part += f"<b>Total Premium:</b> {count} user"
         await message.reply_text(part, disable_web_page_preview=True)
 
