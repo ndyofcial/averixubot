@@ -60,12 +60,16 @@ __HELP__ = """
 async def _(client, message):
     user = message.from_user
 
-    # Ambil semua role terbaru
-    seller_id = [int(x) for x in await get_list_from_vars(bot.me.id, "SELER_USERS")]
-    admin_id  = [int(x) for x in await get_list_from_vars(bot.me.id, "ADMIN_USERS")]
+    # Ambil list seller, admin & superultra
+    seles_users = [int(x) for x in await get_list_from_vars(client.me.id, "SELER_USERS")]
+    admin_users = [int(x) for x in await get_list_from_vars(client.me.id, "ADMIN_USERS")]
+    superultra_users = [int(x) for x in await get_list_from_vars(client.me.id, "ULTRA_PREM")]
 
-    # Cek akses sesuai prioritas role
-    if user.id != OWNER_ID and user.id not in admin_id and user.id not in seller_id:
+    # Gabungkan semua role
+    allowed_users = set(seles_users + admin_users + superultra_users + [OWNER_ID])
+
+    # Kalau bukan seller, bukan admin, bukan superultra, bukan OWNER → stop (tanpa respon)
+    if message.from_user.id not in allowed_users:
         return
 
     # Ambil user_id dan durasi
@@ -97,10 +101,12 @@ Contoh:
     # Tentukan maksimal hari berdasarkan role
     if user.id == OWNER_ID:
         max_days = 3650
-    elif user.id in admin_id:
+    elif user.id in admin_users:
         max_days = 180
-    elif user.id in seller_id:
+    elif user.id in seles_users:
         max_days = 30
+    elif user.id in superultra_users:
+        max_days = 365  # misal superultra boleh 1 tahun
     else:
         return await message.reply("⛔ Kamu tidak punya akses ke perintah ini.")
 
@@ -115,31 +121,30 @@ Contoh:
     except Exception as e:
         return await msg.edit(f"❌ Error: {e}")
 
-    # Cek expired target
-    dataexp = await get_expired_date(target_user.id)
-    expired_str = dataexp.astimezone(timezone("Asia/Jakarta")).strftime("%d-%m-%Y %H:%M") if dataexp else "⛔ Belum berlangganan"
-
-    prem_users = await get_list_from_vars(bot.me.id, "PREM_USERS")
-    if target_user.id in prem_users:
-        return await msg.edit(f"""
-**👤 Nama:** {target_user.first_name}
-🆔 ID: `{target_user.id}`
-📚 Keterangan: Sudah Premium
-⏳ Masa Aktif: {expired_str}
-""")
-
-    # Set expired dan tambahkan ke PREM_USERS
     try:
         now = datetime.now(timezone("Asia/Jakarta"))
-        expired_date = now + timedelta(days=total_days)
 
+        # Ambil expired lama (kalau ada)
+        dataexp = await get_expired_date(target_user.id)
+
+        if dataexp and dataexp > now:
+            expired_date = dataexp + timedelta(days=total_days)
+        else:
+            expired_date = now + timedelta(days=total_days)
+
+        # Simpan expired baru
         await set_expired_date(target_user.id, expired_date)
+
+        # Pastikan masuk ke PREM_USERS
         await add_to_vars(bot.me.id, "PREM_USERS", target_user.id)
+
+        expired_str = expired_date.strftime("%d-%m-%Y %H:%M")
 
         await msg.edit(f"""
 **👤 Nama:** {target_user.first_name}
 🆔 ID: `{target_user.id}`
-⏳ Expired: `{expired_date.strftime('%d-%m-%Y')}`
+📚 Keterangan: Premium Aktif
+⏳ Masa Aktif: {expired_str}
 🔹 Silakan buka @{bot.me.username} untuk menggunakan userbot
 """)
 
@@ -149,7 +154,7 @@ Contoh:
             f"""
 **👤 Seller/Admin:** {message.from_user.first_name} (`{message.from_user.id}`)
 **👤 Customer:** {target_user.first_name} (`{target_user.id}`)
-⏳ Expired: `{expired_date.strftime('%d-%m-%Y')}`
+⏳ Expired: `{expired_str}`
 """,
             reply_markup=InlineKeyboardMarkup(
                 [
@@ -223,19 +228,23 @@ async def _(client, message):
     if not prem_users:
         return await message.reply_text("📭 Tidak ada pengguna premium yang ditemukan.")
 
-    text = ""
+    text = "<b>👑 Daftar Pengguna Premium:</b>\n\n"
     count = 0
     batch = []
 
     for user_id in prem_users:
         try:
-            user = await bot.get_users(user_id)
+            user = await client.get_users(int(user_id))
             expired = await get_expired_date(user.id)
-            expired_str = expired.strftime("%d-%m-%Y") if expired else "Tidak ada"
+
+            expired_str = (
+                expired.astimezone(timezone("Asia/Jakarta")).strftime("%d-%m-%Y %H:%M")
+                if expired else "❌ Tidak ada"
+            )
             count += 1
 
             user_info = (
-                f"• {count}. <a href='tg://user?id={user.id}'>"
+                f"• <b>{count}.</b> <a href='tg://user?id={user.id}'>"
                 f"{user.first_name} {user.last_name or ''}</a>\n"
                 f"🆔 <code>{user.id}</code>\n"
                 f"⏳ Expired: <code>{expired_str}</code>\n\n"
@@ -255,7 +264,10 @@ async def _(client, message):
         batch.append(text)
 
     # kirim batch satu-satu
-    for part in batch:
+    for idx, part in enumerate(batch):
+        if idx == 0:
+            # tambahin total di batch pertama
+            part += f"<b>Total Premium:</b> {count} user"
         await message.reply_text(part, disable_web_page_preview=True)
 
 
