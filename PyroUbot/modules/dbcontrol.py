@@ -179,54 +179,49 @@ Contoh:
 
 
 @PY.BOT("unprem")
+@PY.OWNER
 async def _(client, message):
-    msg = await message.reply("sedang memproses...")
+    msg = await message.reply("⏳ Memproses...")
 
-    # ambil list seller, admin & superultra
-    seles_users = await get_list_from_vars(client.me.id, "SELER_USERS")
-    admin_users = await get_list_from_vars(client.me.id, "ADMIN_USERS")
-    superultra_users = await get_list_from_vars(client.me.id, "ULTRA_PREM")
-
-    # kalau bukan seller, bukan admin, bukan superultra, bukan OWNER → stop (tanpa respon)
-    if (
-        message.from_user.id not in seles_users
-        and message.from_user.id not in admin_users
-        and message.from_user.id not in superultra_users
-        and message.from_user.id != OWNER_ID
-    ):
-        return
-
-    user_id = await extract_user(message)
-    if not user_id:
-        return await msg.edit(f"<b>{message.text} user_id/username</b>")
-
-    try:
-        user = await client.get_users(user_id)
-    except Exception as error:
-        return await msg.edit(error)
-
-    prem_users = await get_list_from_vars(client.me.id, "PREM_USERS")
-
-    if user.id not in prem_users:
-        return await msg.edit(f"""
- ɪɴғᴏʀᴍᴀᴛɪᴏɴ :
- <blockquote><b>⎆ name: [{user.first_name} {user.last_name or ''}](tg://user?id={user.id})</b>
- <b>⎆ id: {user.id}</b>
- <b>⎆ keterangan: tidak dalam daftar</b></blockquote>
+    # ambil target user
+    reply = message.reply_to_message
+    if reply:
+        target_id = reply.from_user.id
+    else:
+        args = message.text.split()
+        if len(args) < 2:
+            return await msg.edit(
+                """⛔ Cara penggunaan: `.unprem user_id/username`
+Contoh:
+- `.unprem 1234567890`
+- `.unprem @username`
+- Reply ke pesan user: `.unprem`
 """
-        )
+            )
+        target_id = args[1]
+
     try:
+        user = await client.get_users(target_id)
+    except Exception as e:
+        return await msg.edit(f"❌ Error mengambil user: {e}")
+
+    try:
+        # hapus dari PREM_USERS
         await remove_from_vars(client.me.id, "PREM_USERS", user.id)
-        await rem_expired_date(user_id)
+        # pastikan expired date ikut dihapus
+        await rem_expired_date(user.id)
+
         return await msg.edit(f"""
- ɪɴғᴏʀᴍᴀᴛɪᴏɴ :
- <blockquote><b>⎆ name: [{user.first_name} {user.last_name or ''}](tg://user?id={user.id})</b>
- <b>⎆ id: {user.id}</b>
- <b>⎆ keterangan: unpremium</b></blockquote>
-"""
-        )
+**ɪɴғᴏʀᴍᴀᴛɪᴏɴ:**
+<blockquote>
+👤 Nama: <a href="tg://user?id={user.id}">{user.first_name} {user.last_name or ''}</a>
+🆔 ID: <code>{user.id}</code>
+📚 Keterangan: <b>Premium Dicabut</b>
+</blockquote>
+""", disable_web_page_preview=True)
+
     except Exception as error:
-        return await msg.edit(error)
+        return await msg.edit(f"❌ Error: {error}")
         
 
 @PY.BOT("getprem")
