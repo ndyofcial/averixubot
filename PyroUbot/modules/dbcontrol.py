@@ -68,54 +68,61 @@ async def _(client, message):
     # Gabungkan semua role
     allowed_users = set(seles_users + admin_users + superultra_users + [OWNER_ID])
 
-    # Kalau bukan seller, bukan admin, bukan superultra, bukan OWNER → stop (tanpa respon)
     if message.from_user.id not in allowed_users:
         return
 
-    # Ambil user_id dan durasi
+    # Ambil target & durasi
     reply = message.reply_to_message
     if reply:
         target_id = reply.from_user.id
         args = message.text.split(maxsplit=1)
-        duration = args[1] if len(args) > 1 else "1b"
+        duration = args[1].lower() if len(args) > 1 else "1b"
     else:
         args = message.text.split()[1:]
         if not args:
             return await message.reply("""⛔ Cara penggunaan: `.prem user_id/username waktu`
 Contoh:
-- `.prem 1234567890 1b` (1 bulan)
-- `.prem @username 15h` (15 hari)
+- `.prem 1234567890 1b`
+- `.prem @username 15h`
 - Reply ke pesan user: `.prem 1b`
+- `.prem 1234567890 0` → permanen (hanya owner)
 """)
         target_id = args[0]
-        duration = args[1] if len(args) > 1 else "1b"
+        duration = args[1].lower() if len(args) > 1 else "1b"
 
-    # Konversi durasi ke hari
-    if duration.endswith("b"):
-        total_days = int(duration[:-1]) * 30 if duration[:-1].isdigit() else 30
-    elif duration.endswith("h"):
-        total_days = int(duration[:-1]) if duration[:-1].isdigit() else 1
+    # Cek permanen
+    is_permanent = duration in ["0", "perma", "permanen"]
+
+    if is_permanent:
+        if user.id != OWNER_ID:
+            return await message.reply("⛔ Hanya OWNER yang bisa memberikan premium permanen.")
+        total_days = None  # permanen
     else:
-        total_days = 30  # default 1 bulan
+        # Konversi ke hari
+        if duration.endswith("b"):
+            total_days = int(duration[:-1]) * 30 if duration[:-1].isdigit() else 30
+        elif duration.endswith("h"):
+            total_days = int(duration[:-1]) if duration[:-1].isdigit() else 1
+        else:
+            total_days = 30
 
-    # Tentukan maksimal hari berdasarkan role
-    if user.id == OWNER_ID:
-        max_days = 3650
-    elif user.id in admin_users:
-        max_days = 180
-    elif user.id in seles_users:
-        max_days = 30
-    elif user.id in superultra_users:
-        max_days = 365  # misal superultra boleh 1 tahun
-    else:
-        return await message.reply("⛔ Kamu tidak punya akses ke perintah ini.")
+        # Tentukan maksimal hari berdasarkan role
+        if user.id == OWNER_ID:
+            max_days = 3650
+        elif user.id in admin_users:
+            max_days = 180
+        elif user.id in seles_users:
+            max_days = 30
+        elif user.id in superultra_users:
+            max_days = 365
+        else:
+            return await message.reply("⛔ Kamu tidak punya akses ke perintah ini.")
 
-    if total_days > max_days:
-        return await message.reply(f"⛔ Maksimal kamu hanya bisa memberikan {max_days} hari.")
+        if total_days > max_days:
+            return await message.reply(f"⛔ Maksimal kamu hanya bisa memberikan {max_days} hari.")
 
     msg = await message.reply("⏳ Memproses...")
 
-    # Ambil data target user
     try:
         target_user = await client.get_users(target_id)
     except Exception as e:
@@ -124,21 +131,22 @@ Contoh:
     try:
         now = datetime.now(timezone("Asia/Jakarta"))
 
-        # Ambil expired lama (kalau ada)
-        dataexp = await get_expired_date(target_user.id)
-
-        if dataexp and dataexp > now:
-            expired_date = dataexp + timedelta(days=total_days)
+        if is_permanent:
+            expired_date = None
+            expired_str = "♾️ PERMANEN"
         else:
-            expired_date = now + timedelta(days=total_days)
+            dataexp = await get_expired_date(target_user.id)
+            if dataexp and dataexp > now:
+                expired_date = dataexp + timedelta(days=total_days)
+            else:
+                expired_date = now + timedelta(days=total_days)
+            expired_str = expired_date.strftime("%d-%m-%Y %H:%M")
 
         # Simpan expired baru
         await set_expired_date(target_user.id, expired_date)
 
-        # Pastikan masuk ke PREM_USERS
+        # Tambah ke list PREM_USERS
         await add_to_vars(bot.me.id, "PREM_USERS", target_user.id)
-
-        expired_str = expired_date.strftime("%d-%m-%Y %H:%M")
 
         await msg.edit(f"""
 **👤 Nama:** {target_user.first_name}
@@ -148,7 +156,7 @@ Contoh:
 🔹 Silakan buka @{bot.me.username} untuk menggunakan userbot
 """)
 
-        # Notifikasi ke owner
+        # Notif owner
         await bot.send_message(
             OWNER_ID,
             f"""
