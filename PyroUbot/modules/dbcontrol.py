@@ -245,12 +245,12 @@ async def _(client, message):
             user = await client.get_users(int(user_id))
             expired = await get_expired_date(user.id)
 
-            expired_str = (
-                expired.astimezone(timezone("Asia/Jakarta")).strftime("%d-%m-%Y %H:%M")
-                if expired else "❌ Tidak ada"
-            )
-            count += 1
+            if expired:
+                expired_str = expired.astimezone(timezone("Asia/Jakarta")).strftime("%d-%m-%Y %H:%M")
+            else:
+                expired_str = "♾️ PERMANEN"
 
+            count += 1
             user_info = (
                 f"• <b>{count}.</b> <a href='tg://user?id={user.id}'>"
                 f"{user.first_name} {user.last_name or ''}</a>\n"
@@ -274,7 +274,6 @@ async def _(client, message):
     # kirim batch satu-satu
     for idx, part in enumerate(batch):
         if idx == 0:
-            # tambahin total di batch pertama
             part += f"<b>Total Premium:</b> {count} user"
         await message.reply_text(part, disable_web_page_preview=True)
 
