@@ -1070,12 +1070,14 @@ async def _(client, message):
     Sh = await message.reply("processing . . .")
     user_id = await extract_user(message)
     if not user_id:
-        return await Sh.edit("pengguna tidak temukan")
+        return await Sh.edit("pengguna tidak ditemukan")
+
     try:
         get_exp = await get_expired_date(user_id)
         sh = await client.get_users(user_id)
     except Exception as error:
-    return await Sh.edit(error)
+        return await Sh.edit(f"❌ Error: {error}")
+
     if get_exp is None:
         await Sh.edit(f"""
 ⎆ INFORMATION
@@ -1092,6 +1094,7 @@ async def _(client, message):
             status = "SuperUltra"
         else:
             status = "Premium"
+
         await Sh.edit(f"""
 ⎆ INFORMATION
 ᚗ name : {sh.mention}
@@ -1099,5 +1102,4 @@ async def _(client, message):
 ᚗ id : {user_id}
 ᚗ prefix : {' '.join(SH)}
 ᚗ expired : {exp}
-"""
-        )        
+""")
